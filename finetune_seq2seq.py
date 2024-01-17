@@ -381,3 +381,68 @@ if st.button('Translate Code'):
 ---------------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------------
 
+
+# Gerekli kütüphanelerin içe aktarılması
+import streamlit as st
+from transformers import T5ForConditionalGeneration, T5Tokenizer
+
+# T5 modellerini yüklemek için fonksiyon
+def load_model(model_name):
+    model = T5ForConditionalGeneration.from_pretrained(model_name)
+    tokenizer = T5Tokenizer.from_pretrained(model_name)
+    return model, tokenizer
+
+# Streamlit uygulaması
+def main():
+    # Sayfa yapılandırması
+    st.set_page_config(page_title="Code Converter with T5 Models", layout="wide")
+
+    # Başlık ve açıklama
+    st.title("Code Converter using T5 Models")
+    st.write("Select a T5 model and enter your code to convert it.")
+
+    # Model seçenekleri
+    model_options = {
+        "Model 1": "path_or_name_of_t5_model_1",
+        "Model 2": "path_or_name_of_t5_model_2",
+        "Model 3": "path_or_name_of_t5_model_3"
+    }
+    selected_model = st.selectbox("Choose a T5 Model", list(model_options.keys()))
+
+    # Kod girişi için metin alanı
+    input_code = st.text_area("Input Code", height=250)
+
+    # Dönüştür ve Temizle butonları
+    convert_button = st.button("Convert", disabled=(input_code == ""))
+    clear_button = st.button("Clear")
+
+    # Temizle butonu işlevselliği
+    if clear_button:
+        st.experimental_rerun()
+
+    # Kod dönüştürme işlemi
+    if convert_button and input_code:
+        # Seçilen modeli yükle
+        model, tokenizer = load_model(model_options[selected_model])
+
+        # Kodu çevir
+        input_text = "translate English to Python: " + input_code  # İngilizceden Python'a çeviri varsayılıyor
+        input_ids = tokenizer.encode(input_text, return_tensors="pt")
+        output_ids = model.generate(input_ids)
+        output_code = tokenizer.decode(output_ids[0], skip_special_tokens=True)
+
+        # Çıktıyı göster
+        st.subheader("Converted Code")
+        st.code(output_code)
+
+if __name__ == "__main__":
+    main()
+
+
+
+
+
+
+
+
+

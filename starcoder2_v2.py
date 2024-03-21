@@ -124,3 +124,100 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
+##############################################################################################################################
+
+
+
+import argparse
+import os
+import pandas as pd
+from transformers import (
+    AutoModelForCausalLM,
+    Trainer,
+    TrainingArguments,
+    TextDatasetForNextTokenPrediction,
+    DataCollatorForLanguageModeling,
+    PreTrainedTokenizerFast,
+    BitsAndBytesConfig,
+    LoraConfig,
+)
+from datasets import Dataset
+import torch
+
+# Örnek DataFrame (df) varsayımı
+# df = pd.DataFrame({'input': ['kod parçası 1', 'kod parçası 2'], 'output': ['çevrilen kod 1', 'çevrilen kod 2']})
+
+def prepare_dataset(df, tokenizer, max_seq_length):
+    # DataFrame'i Dataset formatına çevir
+    def tokenize_function(examples):
+        # Model için uygun formatta veriyi hazırla
+        concatenated_examples = [inp + tokenizer.sep_token + out for inp, out in zip(examples['input'], examples['output'])]
+        return tokenizer(concatenated_examples, max_length=max_seq_length, truncation=True, padding="max_length")
+    
+    dataset = Dataset.from_pandas(df)
+    tokenized_dataset = dataset.map(tokenize_function, batched=True)
+    return tokenized_dataset
+
+def main():
+    # Args değerlerini sabit olarak tanımla
+    args = {
+        "model_id": "bigcode/starcoder2-3b",
+        "max_seq_length": 1024,
+        "micro_batch_size": 1,
+        "gradient_accumulation_steps": 4,
+        "weight_decay": 0.01,
+        "bf16": True,
+        "attention_dropout": 0.1,
+        "learning_rate": 2e-4,
+        "lr_scheduler_type": "cosine",
+        "warmup_steps": 100,
+        "seed": 0,
+        "output_dir": "finetune_starcoder2",
+        "push_to_hub": False,
+    }
+
+    tokenizer = PreTrainedTokenizerFast.from_pretrained(args["model_id"])
+    model = AutoModelForCausalLM.from_pretrained(
+        args["model_id"],
+        attention_dropout=args["attention_dropout"],
+        torch_dtype=torch.bfloat16 if args["bf16"] else None,
+    )
+
+    # DataFrame'den dataset hazırla
+    df = pd.read_csv("your_dataset.csv")  # DataFrame'inizi yükleyin
+    tokenized_dataset = prepare_dataset(df, tokenizer, args["max_seq_length"])
+
+    # TrainingArguments ve Trainer tanımla
+    training_args = TrainingArguments(
+        output_dir=args["output_dir"],
+        per_device_train_batch_size=args["micro_batch_size"],
+        gradient_accumulation_steps=args["gradient_accumulation_steps"],
+        learning_rate=args["learning_rate"],
+        num_train_epochs=3,
+        weight_decay=args["weight_decay"],
+        logging_dir="./logs",
+    )
+
+    data_collator = DataCollatorForLanguageModeling(
+        tokenizer=tokenizer, mlm=False
+    )
+
+    trainer = Trainer(
+        model=model,
+        args=training_args,
+        train_dataset=tokenized_dataset,
+        data_collator=data_collator,
+    )
+
+    # Modeli eğit
+    trainer.train()
+
+    # Modeli kaydet
+    trainer.save_model(args["output_dir"])
+    if args["push_to_hub"]:
+        trainer.push_to_hub()
+
+if __name__ == "__main__":
+    main()

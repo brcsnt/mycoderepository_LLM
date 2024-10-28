@@ -40,7 +40,17 @@ generate_confusion_matrix(data, 'Output', 'Flag')
 
 
 
-
+"""Açıklamalar:
+Haritalama:
+"Evet" ve "Hayır" etiketlerini sayısal değerlere (1 ve 0) dönüştürüyoruz.
+Confusion Matrix Görselleştirmesi:
+seaborn'un heatmap fonksiyonunu kullanarak confusion matrix'i görselleştiriyoruz.
+annot=True parametresi ile matrisin hücrelerine sayı değerlerini yazıyoruz.
+fmt='d' ile sayıları tam sayı olarak görüntülüyoruz.
+cmap='Blues' ile mavi renk tonlarını kullanarak görseli renklendiriyoruz.
+xticklabels ve yticklabels ile etiketleri belirliyoruz.
+Metriğin Hesaplanması ve Yazdırılması:
+Accuracy, Precision, Recall ve F1 Score hesaplanıp ekrana yazdırılıyor."""
 
 
 

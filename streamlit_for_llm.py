@@ -111,14 +111,16 @@ if selected_pdf and selected_keyword:
     model = SentenceTransformer('all-MiniLM-L6-v2')
 
     try:
-        # Chunk'ları embedding vektörlerine dönüştürme
+        # Chunk'ları embedding vektörlerine dönüştürme (2D formata dönüştürülür)
         chunk_embeddings = model.encode(chunks)
+        if len(chunk_embeddings.shape) == 1:
+            chunk_embeddings = chunk_embeddings.reshape(1, -1)
 
-        # Keyword'ü embedding vektörüne dönüştürme
-        keyword_embedding = model.encode([selected_keyword])
+        # Keyword'ü embedding vektörüne dönüştürme (2D formata dönüştürülür)
+        keyword_embedding = model.encode([selected_keyword]).reshape(1, -1)
 
         # Cosine similarity hesaplama
-        similarities = cosine_similarity([keyword_embedding], chunk_embeddings).flatten()
+        similarities = cosine_similarity(keyword_embedding, chunk_embeddings).flatten()
 
         # Eğer similarity array boş veya hatalıysa durdur
         if len(similarities) == 0:

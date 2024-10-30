@@ -82,3 +82,40 @@ Score: [Number between 1-5]
 Justification: [Your brief and clear justification (maximum 2 sentences)]
 
 Note: Use only the requested format in your output and do not include additional information.
+
+
+
+
+
+
+
+----------------------------------------------------------------------------------------------------------------------------------
+
+
+Türkiye'nin en popüler 100 yerli ve yabancı giyim markasını düşünün. Her bir markayı içeren cümleler oluşturun ve bu cümleleri aşağıdaki formata uygun şekilde veri haline getirin:
+
+python
+Kodu kopyala
+veriler = [
+    {
+        "text": "ABC Şirketi bugün yeni bir ürün tanıttı.",
+        "entities": [[0, 11, "ORG"]]
+    },
+    {
+        "text": "XYZ Holding, finans sektöründe liderdir.",
+        "entities": [[0, 11, "ORG"]]
+    }
+]
+Açıklama:
+
+text: Markayı içeren cümle.
+entities: Liste içinde, her bir entity'nin başlangıç ve bitiş indeksleri ile entity türünü belirten bir alt liste bulunur.
+Başlangıç indeksi (int): Entity'nin metin içindeki başlangıç karakter pozisyonu.
+Bitiş indeksi (int): Entity'nin metin içindeki bitiş karakter pozisyonu.
+Entity türü (str): Entity'nin kategorisi, örneğin "ORG" (organizasyon).
+Görev:
+
+Türkiye'nin en popüler 100 giyim markasını kullanarak cümleler oluşturun.
+Her cümlede bir marka bulunmalıdır.
+Her cümleyi ve ilgili entity bilgilerini yukarıdaki formata uygun şekilde veriler listesine ekleyin."
+

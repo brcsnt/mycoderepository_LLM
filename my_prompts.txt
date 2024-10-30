@@ -119,3 +119,189 @@ Türkiye'nin en popüler 100 giyim markasını kullanarak cümleler oluşturun.
 Her cümlede bir marka bulunmalıdır.
 Her cümleyi ve ilgili entity bilgilerini yukarıdaki formata uygun şekilde veriler listesine ekleyin."
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+---------------------------------------------------------------------------------------------
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Giyim ve Kıyafet Markaları İçin Prompt:
+Görev:
+
+"Türkiye ve dünyadaki en popüler 100 giyim ve kıyafet markasını düşünün. Bu markaları kullanarak cümleler oluşturun ve verileri aşağıdaki formata uygun şekilde hazırlayın. Marka isimleri cümlelerin başında, ortasında veya sonunda yer alabilir. Başlangıç ve bitiş indekslerinin kesinlikle doğru olduğundan emin olun.
+
+python
+Kodu kopyala
+veriler = [
+    {
+        "text": "BrandName yeni sezon koleksiyonunu tanıttı.",
+        "entities": [[başlangıç_indeksi, bitiş_indeksi, "ORG"]]
+    },
+    # Diğer veriler...
+]
+Açıklama:
+
+text: Markayı içeren cümle.
+entities: Her bir entity için başlangıç ve bitiş indeksleri ile entity türünü belirten bir liste.
+başlangıç_indeksi (int): Entity'nin metin içindeki başlangıç karakter pozisyonu.
+bitiş_indeksi (int): Entity'nin metin içindeki bitiş karakter pozisyonu.
+Entity türü (str): "ORG" (organizasyon) gibi entity'nin kategorisi.
+Görev Adımları:
+
+Türkiye ve dünyadaki en popüler giyim ve kıyafet markalarını listeleyin.
+Her bir marka için bir cümle oluşturun.
+Marka isimleri cümlelerin başında, ortasında veya sonunda yer alabilir.
+Her cümlede sadece bir marka adı bulunsun.
+Markanın metin içindeki kesin başlangıç ve bitiş indekslerini belirleyin.
+Her bir veriyi belirtilen formata uygun olarak veriler listesine ekleyin.
+Genel Talimatlar:
+
+Kesinlik Önemli: Başlangıç ve bitiş indekslerini belirlerken, markanın veya kuruluşun metin içindeki tam konumunu dikkate alın.
+Türkçe Karakterlere Dikkat: İndeksleri hesaplarken Türkçe karakterlerin uzunluklarına dikkat edin.
+Çeşitlilik Sağlayın: Her kategori için farklı cümle yapıları ve bağlamlar kullanın.
+Dil Bilgisi ve Anlam Bütünlüğü: Cümleler dil bilgisi kurallarına uygun ve anlamlı olmalıdır.
+Kategorilere Uygunluk: Her markayı veya kuruluşu kendi sektörüne uygun bir bağlamda kullanın.
+Benzin ve Enerji Markaları İçin Prompt:
+Görev:
+
+"Türkiye ve dünyadaki önde gelen benzin ve enerji markalarını düşünün. Bu markaları kullanarak cümleler oluşturun ve verileri aşağıdaki formata uygun şekilde hazırlayın. Marka isimleri cümlelerin başında, ortasında veya sonunda yer alabilir. Başlangıç ve bitiş indekslerinin kesinlikle doğru olduğundan emin olun.
+
+python
+Kodu kopyala
+veriler = [
+    {
+        "text": "BrandName yenilenebilir enerji yatırımlarını artırdı.",
+        "entities": [[başlangıç_indeksi, bitiş_indeksi, "ORG"]]
+    },
+    # Diğer veriler...
+]
+Açıklama ve Görev Adımları:
+
+Yukarıdaki giyim markaları promptundaki açıklama ve adımları izleyin, ancak bu sefer benzin ve enerji markalarını kullanın.
+Marka isimlerinin cümle içinde farklı pozisyonlarda olabileceğini unutmayın.
+Teknoloji Markaları İçin Prompt:
+Görev:
+
+"Türkiye ve dünyadaki en büyük teknoloji markalarını düşünün. Bu markaları kullanarak cümleler oluşturun ve verileri aşağıdaki formata uygun şekilde hazırlayın. Marka isimleri cümlelerin başında, ortasında veya sonunda yer alabilir. Başlangıç ve bitiş indekslerinin kesinlikle doğru olduğundan emin olun.
+
+python
+Kodu kopyala
+veriler = [
+    {
+        "text": "Yeni akıllı telefon modelini BrandName duyurdu.",
+        "entities": [[başlangıç_indeksi, bitiş_indeksi, "ORG"]]
+    },
+    # Diğer veriler...
+]
+Açıklama ve Görev Adımları:
+
+Daha önceki promptlardaki açıklama ve adımları izleyin, bu sefer teknoloji markalarını kullanarak.
+Cümle yapısını çeşitlendirin; marka isimleri farklı yerlerde olabilir.
+Vakıf ve Dernekler İçin Prompt:
+Görev:
+
+"Türkiye ve dünyadaki tanınmış vakıf ve dernekleri düşünün. Bu kuruluşları kullanarak cümleler oluşturun ve verileri aşağıdaki formata uygun şekilde hazırlayın. Kuruluş isimleri cümlelerin başında, ortasında veya sonunda yer alabilir. Başlangıç ve bitiş indekslerinin kesinlikle doğru olduğundan emin olun.
+
+python
+Kodu kopyala
+veriler = [
+    {
+        "text": "Eğitim projelerine destek veren BrandName önemli bir adım attı.",
+        "entities": [[başlangıç_indeksi, bitiş_indeksi, "ORG"]]
+    },
+    # Diğer veriler...
+]
+Açıklama ve Görev Adımları:
+
+Önceki promptlardaki adımları izleyerek, vakıf ve dernek isimlerini kullanın.
+Cümlelerde kuruluş isimlerinin konumunu değiştirin.
+Bankalar İçin Prompt:
+Görev:
+
+"Türkiye ve dünyadaki en büyük bankaları düşünün. Bu bankaları kullanarak cümleler oluşturun ve verileri aşağıdaki formata uygun şekilde hazırlayın. Banka isimleri cümlelerin başında, ortasında veya sonunda yer alabilir. Başlangıç ve bitiş indekslerinin kesinlikle doğru olduğundan emin olun.
+
+python
+Kodu kopyala
+veriler = [
+    {
+        "text": "Faiz oranlarını düşüren banka BrandName oldu.",
+        "entities": [[başlangıç_indeksi, bitiş_indeksi, "ORG"]]
+    },
+    # Diğer veriler...
+]
+Açıklama ve Görev Adımları:
+
+Daha önceki açıklama ve adımları bankalar için uygulayın.
+Cümle yapısını marka isminin konumuna göre çeşitlendirin.
+Holding ve Grup Şirketleri İçin Prompt:
+Görev:
+
+"Türkiye ve dünyadaki önemli holding ve grup şirketlerini düşünün. Bu şirketleri kullanarak cümleler oluşturun ve verileri aşağıdaki formata uygun şekilde hazırlayın. Şirket isimleri cümlelerin başında, ortasında veya sonunda yer alabilir. Başlangıç ve bitiş indekslerinin kesinlikle doğru olduğundan emin olun.
+
+python
+Kodu kopyala
+veriler = [
+    {
+        "text": "BrandName yeni bir teknoloji şirketi satın aldı.",
+        "entities": [[başlangıç_indeksi, bitiş_indeksi, "ORG"]]
+    },
+    # Diğer veriler...
+]
+Açıklama ve Görev Adımları:
+
+Önceki adımları holding ve grup şirketleri için uygulayın.
+Şirket isimlerinin cümledeki yerini değiştirerek çeşitlilik sağlayın.
+Esnaf Lokantaları ve Restoranlar İçin Prompt:
+Görev:
+
+"Türkiye ve dünyadaki ünlü esnaf lokantaları, yeme-içme yerleri ve restoranları düşünün. Bu mekanları kullanarak cümleler oluşturun ve verileri aşağıdaki formata uygun şekilde hazırlayın. Mekan isimleri cümlelerin başında, ortasında veya sonunda yer alabilir. Başlangıç ve bitiş indekslerinin kesinlikle doğru olduğundan emin olun.
+
+python
+Kodu kopyala
+veriler = [
+    {
+        "text": "Lezzetli menüsüyle ünlü olan BrandName ziyaretçilerini ağırlıyor.",
+        "entities": [[başlangıç_indeksi, bitiş_indeksi, "ORG"]]
+    },
+    # Diğer veriler...
+]
+Açıklama ve Görev Adımları:
+
+Daha önceki açıklamaları bu kategoriye uyarlayın.
+Mekan isimlerinin cümledeki pozisyonunu değiştirin.
+Genel Talimatlar:
+Kesinlik Önemli: Başlangıç ve bitiş indekslerini belirlerken, markanın veya kuruluşun metin içindeki tam konumunu dikkate alın.
+Türkçe Karakterlere Dikkat: İndeksleri hesaplarken Türkçe karakterlerin uzunluklarına dikkat edin.
+Çeşitlilik Sağlayın: Her kategori için farklı cümle yapıları ve bağlamlar kullanın.
+Dil Bilgisi ve Anlam Bütünlüğü: Cümleler dil bilgisi kurallarına uygun ve anlamlı olmalıdır.
+Kategorilere Uygunluk: Her markayı veya kuruluşu kendi sektörüne uygun bir bağlamda kullanın.
+Cümle Yapısı: Marka veya kuruluş isimleri cümlelerin başında, ortasında veya sonunda yer alabilir; bu şekilde cümlelerinizi çeşitlendirin.
+

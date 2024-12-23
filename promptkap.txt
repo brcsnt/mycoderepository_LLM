@@ -389,3 +389,101 @@ Question/Phrase: "kar payı dağıtımı"
 
 AI’s Output: { "result": "hayır", "explanation": "Paragraf, temettü (kâr payı) dağıtılmayacağını açıkça belirtiyor; bu da kâr dağıtımının yapılmadığı anlamına geliyor." }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+--------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------
+
+# Output=3 olanların değerlendirmesi
+
+
+1) You will be provided with:
+
+* A Turkish disclosure (paragraph or multiple paragraphs from an official statement, press release, or similar source).
+* A keyword (or short phrase) in Turkish (e.g., “temettü,” “yeşil enerji yatırımı,” “finansal rapor,” etc.).
+
+2) Carefully read the provided disclosure to see if the meaning or concept of the keyword is present, even if it is referred to by a synonym or related term (conceptual match).
+
+* For instance, if the keyword is “temettü,” you should also look for “kâr payı” or any other expression that clearly indicates the same concept (dividend distribution).
+
+3) Provide a clear answer:
+
+* Evet if the concept or meaning of the keyword is found in the disclosure (it may appear as a synonym or closely related term).
+* Hayır if there is no mention or discussion of that concept at all.
+
+4) If the answer is "Evet", then:
+
+* Include a concise explanation in Turkish describing why it is a conceptual or synonymous match (e.g., “Synonym detected” or “Equivalent term used”).
+* Extract the relevant paragraph(s) (in Turkish) where that concept/meaning is present.
+
+5) If the answer is "Hayır", then:
+
+* Provide a short explanation in Turkish stating that no synonymous or conceptually matching term is found.
+
+6) Your output must be returned in a JSON-like structure with square brackets (no extra text, no curly braces). Your responses must be in Turkish.
+
+* Example structure if “Evet”:
+  [ "result": "evet", "explanation": "…", "relevantParagraphs": "…" ]
+
+* Example structure if “Hayır”:
+ [ "result": "hayır", "explanation": "…" ]
+ 
+ 
+EXAMPLES:
+
+Örnek 1: (Keyword present, showing semantic variation)
+
+Paragraph (Disclosure)
+"Şirket, hissedarlarına temettülerin dağıtılacağını duyurdu ve böylece kâr payı alma beklentisi oluştu."
+
+Keyword
+"temettü"
+
+Expected Output:
+[ "result": "evet", "explanation": "Keyword ‘temettü’ paragrafta ‘temettülerin’ şeklinde geçmektedir. Bu da kâr payı ödemesinin yapılacağını gösteriyor.", "relevantParagraphs": "Şirket, hissedarlarına temettülerin dağıtılacağını duyurdu..." ]
+
+
+Örnek 2: (Keyword clearly discussed)
+
+Paragraph (Disclosure)
+"Yönetim Kurulu, 2024 yılında yeşil enerji projelerine ek bütçe ayırma kararı almıştır. Bu kapsamda rüzgâr enerjisi ve güneş enerjisi tesisleri için yatırımlar planlanmaktadır."
+
+Keyword
+"yeşil enerji yatırımı"
+
+Explanation
+The phrase “yeşil enerji” is mentioned and they refer to energy projects in wind and solar. Even though the word “yatırımı” is not exactly appended, it is semantically implied that they are discussing green energy investments.
+
+Expected Output:
+[ "result": "evet", "explanation": "Keyword ‘yeşil enerji yatırımı’ paragrafta benzer ifadelerle (yeşil enerji projeleri) tartışılmaktadır. Bu da şirketin çevre dostu yatırımlara odaklandığını gösteriyor.", "relevantParagraphs": "Yönetim Kurulu, 2024 yılında yeşil enerji projelerine ek bütçe ayırma kararı almıştır..." ]
+
+
+Örnek 3: (Keyword not present conceptually)
+
+Paragraph (Disclosure)
+"Son finansal rapora göre, şirketin döviz borçlarının yapılandırılması ve yeni pazarlara giriş için fon sağlanması planlanmıştır. Kâr payı veya temettü ile ilgili herhangi bir ifade yer almamaktadır."
+
+Keyword
+"yeşil enerji yatırımı"
+
+Explanation
+No part of the text refers to or implies an investment in green or renewable energy.
+
+Expected Output:
+[ "result": "hayır", "explanation": "Keyword ‘yeşil enerji yatırımı’ konseptine dair herhangi bir ibare veya eşanlamlı ifade bulunmamaktadır." ]
+

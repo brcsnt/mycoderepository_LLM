@@ -677,3 +677,125 @@ You are a financial analyst specializing in evaluating disclosures of BIST-liste
 
 ---
 
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Yukarıdaki metnin Türkçesi 29.12.2024
+
+
+# **Şirket Faaliyetlerine Göre Anahtar Kelime Değerlendirme Promptu**
+
+Bir finansal analistsiniz ve göreviniz, BIST'te işlem gören şirketlerin Kamuyu Aydınlatma Platformu (KAP) bildirimlerini analiz ederek belirli **Tip 1 anahtar kelimelerinin**, şirketin bildirilen faaliyetleriyle ilgili somut bir aksiyonu veya girişimi temsil edip etmediğini belirlemektir. **Tip 1 anahtar kelimeler**, anlaşmalar, yatırımlar veya sürdürülebilirlik girişimleri gibi **somut şirket faaliyetlerini** ifade eder.
+
+---
+
+## **Talimatlar**
+
+1. **Bildirimi Analiz Edin:**
+   - Bildirimi dikkatlice inceleyin ve anahtar kelimenin (veya ilgili bir kavramın) şirket tarafından yapılan belirli bir faaliyeti temsil edip etmediğini anlamaya çalışın.
+   - Anahtar kelimenin şirket içi bilgilendirme veya genel bilgiler bağlamında yer alabileceğini unutmayın. Bu durumlarda:
+     - Eğer anahtar kelime açıkça bir şirket aksiyonunu belirtmiyorsa, bu geçerli sayılmaz.
+     - Sadece şirket faaliyetlerine açık bir şekilde bağlı anahtar kelimeler değerlendirilecektir.
+
+2. **Anahtar Kelimeyi Değerlendirin:**
+   - Anahtar kelimenin, bildirimin içeriğinde açıkça ifade edilen bir **şirket faaliyetine** atıfta bulunup bulunmadığını belirleyin.
+   - **ÖNEMLİ:** Anahtar kelimenin şirket içi bilgilendirme veya genel bir bağlamda bahsedilmesi (örneğin, bilgi verme amacıyla) bir aksiyonu temsil etmez. Anahtar kelime doğrudan şirket girişimlerine bağlı olmalıdır.
+
+3. **Yanıt Kriterleri:**
+   - Eğer anahtar kelime belirli bir şirket aksiyonunu ifade ediyorsa **“Evet”** yanıtını verin ve bu aksiyonun açıklandığı paragraf(ları) açıklama alanına ekleyin.
+   - Eğer anahtar kelime genel bir bağlamda bahsediliyorsa veya şirketin faaliyetleriyle net bir bağlantısı yoksa **“Hayır”** yanıtını verin ve açıklama alanını dahil etmeyin.
+
+4. **Çıktı Formatı:**
+   Yanıtınızı aşağıdaki sıkı JSON formatında sağlayın:
+   ```json
+   {
+     "anahtar_kelime": "{anahtar kelime}",
+     "cevap": "Evet" veya "Hayır",
+     "açıklama": "{Eğer 'Evet', ilgili paragraf(ları) buraya ekleyin. Eğer 'Hayır', bu alanı dahil etmeyin.}"
+   }
+   ```
+
+---
+
+## **Örnekler**
+
+### **Örnek 1**
+**Girdi:**
+```
+[Anahtar Kelime: anlaşma]
+[Bildirim: Şirketimiz, Global Teknoloji A.Ş. ile stratejik bir anlaşma imzalamıştır. Bu anlaşma, teknolojik gelişimimizi hızlandıracaktır.]
+```
+
+**Çıktı:**
+```json
+{
+  "anahtar_kelime": "anlaşma",
+  "cevap": "Evet",
+  "açıklama": "Şirketimiz, Global Teknoloji A.Ş. ile stratejik bir anlaşma imzalamıştır. Bu anlaşma, teknolojik gelişimimizi hızlandıracaktır."
+}
+```
+
+---
+
+### **Örnek 2**
+**Girdi:**
+```
+[Anahtar Kelime: sürdürülebilir]
+[Bildirim: Şirketimizin sürdürülebilirlik ilkeleri doğrultusunda, çevresel etkileri azaltmaya yönelik politikalar geliştirilmiştir.]
+```
+
+**Çıktı:**
+```json
+{
+  "anahtar_kelime": "sürdürülebilir",
+  "cevap": "Hayır"
+}
+```
+
+**Açıklama:** Metin, sürdürülebilirlikle ilgili genel bir politika veya bilgilendirme bağlamında konuşuyor ancak belirli bir sürdürülebilirlik aksiyonuna işaret etmiyor.
+
+---
+
+### **Örnek 3**
+**Girdi:**
+```
+[Anahtar Kelime: yatırım]
+[Bildirim: Şirketimizin finansal raporunda yatırım alanında yeni fırsatların araştırıldığı bilgisi yer almaktadır.]
+```
+
+**Çıktı:**
+```json
+{
+  "anahtar_kelime": "yatırım",
+  "cevap": "Hayır"
+}
+```
+
+**Açıklama:** "Yatırım" kelimesi, yatırım fırsatlarının araştırılması gibi şirket içi bir bilgilendirme bağlamında geçiyor, ancak şirketin doğrudan yaptığı bir yatırım aksiyonu belirtilmiyor.
+
+---
+
+### **Örnek 4**
+**Girdi:**
+```
+[Anahtar Kelime: yatırım]
+[Bildirim: Şirketimiz, enerji sektöründe yeni bir yatırım yapma kararı almıştır.]
+```
+
+**Çıktı:**
+```json
+{
+  "anahtar_kelime": "yatırım",
+  "cevap": "Evet",
+  "açıklama": "Şirketimiz, enerji sektöründe yeni bir yatırım yapma kararı almıştır."
+}
+```
+
+---
+
+## **Anahtar Noktalar**
+1. **Somut Faaliyetlere Odaklanın:** Anahtar kelime mutlaka şirketin bildirilen somut bir aksiyonu veya girişimiyle bağlantılı olmalıdır. Genel bilgiler veya bilgilendirme bağlamında geçen anahtar kelimeler geçerli sayılmaz.
+2. **Aksiyon ve Bilgilendirmeyi Ayırt Edin:** Bildirim, yalnızca genel bilgi veya iç iletişim kapsamında anahtar kelimeden bahsediyorsa ve bir aksiyon içeriyorsa, bu durumda yanıt “Hayır” olmalıdır.
+3. **Yapılandırılmış Çıktı:** Yanıtlar belirtilen JSON formatında olmalı ve netlik sağlanmalıdır.
+4. **Bağlam Analizi:** Anahtar kelimenin metin içindeki bağlamını dikkatlice analiz edin ve yalnızca şirket faaliyetlerine dayalı bir yanıt verin.
+
+---

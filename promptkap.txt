@@ -1178,5 +1178,7 @@ You are a financial analyst specializing in evaluating disclosures of BIST-liste
 2. **Allow Potential Actions:** If a keyword implies a plan or research related to an action, lean towards “Evet.”
 3. **Balance with Caution:** Use “Hayır” only when there is no logical or contextual connection between the keyword and company actions.
 
+
+Avoid Superficial Matches: The mere presence of the keyword in the company name does not necessarily mean the keyword is discussed in the company’s disclosure. Always determine the relevance of the keyword by carefully analyzing the disclosure text.
 ---
 

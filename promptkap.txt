@@ -1058,6 +1058,13 @@ You are a financial analyst specializing in evaluating disclosures of BIST-liste
 
 -- 30.12.2024 Yumuşatılmış prompt
 
+----
+Daha dengeli bir değerlendirme yapılması için talimatları yumuşatarak ve daha açık bir şekilde nasıl “Evet” denilebileceğini vurgulayan bir revizyon yapabiliriz. Bunun için:
+
+Yapıcı Dil Kullanımı: Şirketin herhangi bir aksiyonu açıkça ima ettiği durumlarda “Evet” demenin neden uygun olabileceğini vurgulamalıyız.
+Örnek Çoğaltımı: Daha fazla “Evet” örneği ekleyerek rehberlik sağlayabiliriz.
+Genel Bilgilere Dayalı “Evet”: Bilgilendirme metinlerinin bile aksiyon potansiyelini göz önünde bulundurmayı öneren bir dil kullanılabilir.
+----
 
 # **Prompt for Keyword-Based Evaluation of Company Activities (Revised)**
 

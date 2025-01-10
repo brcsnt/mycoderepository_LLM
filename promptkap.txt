@@ -1337,5 +1337,7 @@ Statements like market entry discussions or pilot projects may serve as indirect
 
 
 
+Evaluate Implicit Indicators:
 
+Look for indirect activities or statements (e.g., research, pilot projects) that imply the keyword. If such indicators suggest likely relevance, respond with “Evet” and justify your answer.
 

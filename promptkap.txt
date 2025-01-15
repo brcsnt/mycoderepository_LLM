@@ -1341,3 +1341,211 @@ Evaluate Implicit Indicators:
 
 Look for indirect activities or statements (e.g., research, pilot projects) that imply the keyword. If such indicators suggest likely relevance, respond with “Evet” and justify your answer.
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Hi everyone. Today, I’ll be presenting an overview of our project, focusing on how we’ve developed a system to efficiently process and analyze corporate disclosures, ensuring accurate and timely insights for business needs.
+
+1)	PRODUCTION MAIN USE CASE 
+Let me start by explaining the main idea of this project. Corporate firms share their disclosures on the Public Disclosure Platform, or KAP. Our system reviews these disclosures and looks for important keyword-based information. The results are sent to corporate banking branches by email so portfolio managers can stay updated. At the same time, the data is stored in the Corporate Data Warehouse for further use. This setup helps share important information easily and supports better decision-making.
+
+2)	KEYWORD-BASED INFORMATION EXTRACTION
+Now, let’s look at how the system extracts information using keyword searches. When a disclosure is processed, the system identifies keywords and analyzes whether they are associated with any actions, plans, or intentions. For instance, if a disclosure mentions sustainability, but no specific activity or plan is outlined, it is considered irrelevant. On the other hand, if the keyword investment appears with indications of potential opportunities, even without explicit details, the system marks it as relevant.
+To achieve this, we use an OpenAI language model, which helps us understand the context of keywords and make accurate decisions. At the end of each day, disclosures are batch processed to capture all updates efficiently.
+
+3)	TECHNICAL FLOW
+
+Let’s dive into the technical process. Disclosures are collected daily from an external API and divided into smaller text chunks. Each chunk is converted into vector embeddings, which allows the system to understand their meaning and context.
+Using keyword lists and system configurations, the top 5 most relevant chunks are selected for further analysis. These selected chunks are sent to a language model for deeper processing. The results, structured as JSON, are stored in a database. This approach helps us manage and analyze a large number of disclosures efficiently and ensures we focus on the most important parts.
+
+4)	DOMAIN ADAPTATION
+Since KAP disclosures are in Turkish, we needed to customize our system to handle this language effectively. To achieve this, we fine-tuned a BERT-based embedding model using a Turkish dataset. This helped the model better understand the structure and meaning of Turkish text.
+In the process, we generated synthetic data by creating keyword-based examples similar to real-world disclosures. This data was used to train the model without needing manually labeled datasets. By adapting BERT with this approach, the system can accurately capture the context of Turkish disclosures, making it highly effective for extracting meaningful insights.
+
+5)	FINAL
+Finally, let me share where we are in the project. We’ve completed the Data Plan Phase and the modeling and auto-evaluation stages. Human evaluation is nearly finished, and we have started work on the production phase. Our current focus is on optimizing resource consumption to ensure the system runs efficiently at scale. With these steps, we are well on our way to delivering a powerful tool for processing and analyzing corporate disclosures.
+
+
+
+
+
+Introduction
+Hi everyone. Today, I’ll share an overview of our project. We’ve developed a system to process and analyze corporate disclosures efficiently, focusing on extracting meaningful insights to support business decisions.
+ 
+1. Production Main Use Case
+Let’s start with the core purpose of this project. Corporate firms publish their disclosures on the Public Disclosure Platform, or KAP. Our system analyzes these disclosures to identify important keyword-based information. The extracted data is emailed to corporate banking branches to keep portfolio managers updated. At the same time, the data is stored in the Corporate Data Warehouse for further analysis. This system ensures that key information is shared seamlessly and supports informed decision-making.
+ 
+2. Keyword-Based Information Extraction
+Next, let’s look at how the system identifies relevant information. It searches for specific keywords and determines if they are linked to actions, plans, or opportunities. For example, mentions of sustainability without any concrete plans are ignored, while investment with potential opportunities is flagged as relevant.
+We achieve this using an OpenAI language model, which helps us interpret the context of keywords and make accurate decisions. At the end of each day, disclosures are batch processed to ensure all updates are captured.
+ 
+3. Technical Flow
+Now, let’s explore the technical side. Disclosures are retrieved daily from an external API and divided into smaller text chunks. These chunks are transformed into vector embeddings, which help the system understand their context and meaning.
+The system then uses keyword lists to select the top 5 most relevant chunks for deeper analysis. These chunks are processed by a language model, and the results are stored in a database as JSON files. This structured workflow allows us to efficiently handle large amounts of data and focus on the most critical parts.
+ 
+4. Domain Adaptation
+Since KAP disclosures are in Turkish, we customized the system to process this language effectively. We fine-tuned a BERT-based embedding model using a Turkish dataset to understand the structure and meaning of disclosures better.
+To train the model, we created synthetic data with keyword-based examples reflecting real-world scenarios. This allowed us to adapt the model without needing manually labeled datasets. As a result, the system can now handle Turkish disclosures with high accuracy, making it highly effective for extracting meaningful insights.
+ 
+5. Current Progress and Next Steps
+Finally, here’s an update on the project’s progress. We’ve completed the Data Plan Phase, as well as the modeling and auto-evaluation stages. Human evaluation is almost done, and we’ve begun the production phase. Our focus now is on optimizing system performance to ensure it operates efficiently at scale. These efforts are bringing us closer to delivering a robust tool for processing and analyzing corporate disclosures.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Hi everyone. Today, I’ll be presenting an overview of our project, focusing on how we’ve developed a system to efficiently process and analyze corporate disclosures, ensuring accurate and timely insights for business needs.
+
+1)	PRODUCTION MAIN USE CASE 
+Let me start by explaining the main idea of this project. Corporate firms share their disclosures on the Public Disclosure Platform, or KAP. Our system reviews these disclosures and looks for important keyword-based information. The results are sent to corporate banking branches by email so portfolio managers can stay updated. At the same time, the data is stored in the Corporate Data Warehouse for further use. This setup helps share important information easily and supports better decision-making.
+
+2)	KEYWORD-BASED INFORMATION EXTRACTION
+Now, let’s look at how the system extracts information using keyword searches. When a disclosure is processed, the system identifies keywords and analyzes whether they are associated with any actions, plans, or intentions. For instance, if a disclosure mentions sustainability, but no specific activity or plan is outlined, it is considered irrelevant. On the other hand, if the keyword investment appears with indications of potential opportunities, even without explicit details, the system marks it as relevant.
+To achieve this, we use an OpenAI language model, which helps us understand the context of keywords and make accurate decisions. At the end of each day, disclosures are batch processed to capture all updates efficiently.
+
+3)	TECHNICAL FLOW
+
+Let’s dive into the technical process. Disclosures are collected daily from an external API and divided into smaller text chunks. Each chunk is converted into vector embeddings, which allows the system to understand their meaning and context.
+Using keyword lists and system configurations, the top 5 most relevant chunks are selected for further analysis. These selected chunks are sent to a language model for deeper processing. The results, structured as JSON, are stored in a database. This approach helps us manage and analyze a large number of disclosures efficiently and ensures we focus on the most important parts.
+
+4)	DOMAIN ADAPTATION
+Since KAP disclosures are in Turkish, we needed to customize our system to handle this language effectively. To achieve this, we fine-tuned a BERT-based embedding model using a Turkish dataset. This helped the model better understand the structure and meaning of Turkish text.
+In the process, we generated synthetic data by creating keyword-based examples similar to real-world disclosures. This data was used to train the model without needing manually labeled datasets. By adapting BERT with this approach, the system can accurately capture the context of Turkish disclosures, making it highly effective for extracting meaningful insights.
+
+5)	FINAL
+Finally, let me share where we are in the project. We’ve completed the Data Plan Phase and the modeling and auto-evaluation stages. Human evaluation is nearly finished, and we have started work on the production phase. Our current focus is on optimizing resource consumption to ensure the system runs efficiently at scale. With these steps, we are well on our way to delivering a powerful tool for processing and analyzing corporate disclosures.
+
+
+
+
+
+Introduction
+Hi everyone. Today, I’ll share an overview of our project. We’ve developed a system to process and analyze corporate disclosures efficiently, focusing on extracting meaningful insights to support business decisions.
+ 
+1. Production Main Use Case
+Let’s start with the core purpose of this project. Corporate firms publish their disclosures on the Public Disclosure Platform, or KAP. Our system analyzes these disclosures to identify important keyword-based information. The extracted data is emailed to corporate banking branches to keep portfolio managers updated. At the same time, the data is stored in the Corporate Data Warehouse for further analysis. This system ensures that key information is shared seamlessly and supports informed decision-making.
+ 
+2. Keyword-Based Information Extraction
+Next, let’s look at how the system identifies relevant information. It searches for specific keywords and determines if they are linked to actions, plans, or opportunities. For example, mentions of sustainability without any concrete plans are ignored, while investment with potential opportunities is flagged as relevant.
+We achieve this using an OpenAI language model, which helps us interpret the context of keywords and make accurate decisions. At the end of each day, disclosures are batch processed to ensure all updates are captured.
+ 
+3. Technical Flow
+Now, let’s explore the technical side. Disclosures are retrieved daily from an external API and divided into smaller text chunks. These chunks are transformed into vector embeddings, which help the system understand their context and meaning.
+The system then uses keyword lists to select the top 5 most relevant chunks for deeper analysis. These chunks are processed by a language model, and the results are stored in a database as JSON files. This structured workflow allows us to efficiently handle large amounts of data and focus on the most critical parts.
+ 
+4. Domain Adaptation
+Since KAP disclosures are in Turkish, we customized the system to process this language effectively. We fine-tuned a BERT-based embedding model using a Turkish dataset to understand the structure and meaning of disclosures better.
+To train the model, we created synthetic data with keyword-based examples reflecting real-world scenarios. This allowed us to adapt the model without needing manually labeled datasets. As a result, the system can now handle Turkish disclosures with high accuracy, making it highly effective for extracting meaningful insights.
+ 
+5. Current Progress and Next Steps
+Finally, here’s an update on the project’s progress. We’ve completed the Data Plan Phase, as well as the modeling and auto-evaluation stages. Human evaluation is almost done, and we’ve begun the production phase. Our focus now is on optimizing system performance to ensure it operates efficiently at scale. These efforts are bringing us closer to delivering a robust tool for processing and analyzing corporate disclosures.
+
+
+
+
+------------------------------------------------------------------------------------------------------------------
+
+
+
+1. Production Main Use Case
+Q: What is the goal of this system?
+A: The goal of this system is to process disclosures shared on the Public Disclosure Platform (KAP) and find important information using specific keywords. These keywords are related to actions, plans, or opportunities that are important for business decisions. The system then shares this information with portfolio managers so they can stay updated and take the right actions. This helps save time and ensures no critical updates are missed.
+Q: How does the system share the extracted information?
+A: Once the system processes a disclosure and finds important information, it sends this information to corporate banking branches by email. At the same time, the extracted data is saved in a central database called the Corporate Data Warehouse. This stored data can be used later for reports or other analyses, making sure nothing important is lost.
+Q: Why is this system important for portfolio managers?
+A: This system is important because it helps portfolio managers get only the information they need, without wasting time reading through long disclosures. They receive the most relevant updates directly in their inboxes, so they can focus on making decisions and managing their clients effectively. This improves their efficiency and ensures they are always well-informed.
+ 
+2. Keyword-Based Information Extraction
+Q: How does the system decide if a keyword is important?
+A: The system looks at how the keyword is used in the disclosure. It doesn’t just check if the keyword is mentioned; it also looks at the context around it. If the keyword is linked to an action, plan, or opportunity, the system marks it as important. If the keyword is mentioned without any real connection to useful information, the system ignores it.
+Q: How does batch processing work?
+A: Instead of processing disclosures one by one, the system collects all the disclosures shared during the day and processes them together in one batch at the end of the day. This method makes the system more efficient and ensures that no disclosures are skipped or missed. It also allows the system to handle a large number of disclosures smoothly.
+Q: What happens if a keyword is mentioned without any action or plan?
+A: If a keyword is mentioned but there’s no action, plan, or opportunity related to it, the system treats the disclosure as irrelevant. For example, if a disclosure mentions investment but does not describe any specific activity, the system will not prioritize it. This helps to focus only on meaningful updates.
+Q: Why does the system use a language model?
+A: The system uses a language model, such as OpenAI’s, because it can understand the meaning of words and sentences. It helps the system figure out if a keyword is actually important or just mentioned without context. This improves the system’s accuracy and ensures relevant information is captured.
+Q: Can the system miss important information?
+A: The system is designed to minimize errors, but there is always a small chance it might miss something. To ensure high accuracy, we also use human evaluation to review and improve the system’s decisions. This combination of automation and manual checks helps reduce mistakes.
+ 
+3. Technical Flow
+Q: Why do you divide disclosures into chunks?
+A: Disclosures can be very long and may include different topics. By dividing them into smaller chunks, the system can focus on analyzing one part at a time. This makes it easier to identify the specific parts of the text that are relevant to the keywords being searched for.
+Q: How does the system find the most important chunks?
+A: After dividing the text into chunks, the system uses ElasticSearch to score how relevant each chunk is based on predefined keywords. The chunks with the highest scores—usually the top 5—are selected for further analysis. This ensures the system focuses only on the most critical sections of the disclosure.
+Q: What are vector embeddings, and why are they used?
+A: Vector embeddings are a way of turning words or sentences into numbers. These numbers help the system understand the meaning and context of the text. By using embeddings, the system can compare different chunks of text and determine which ones are most relevant.
+Q: Why is the data saved as JSON?
+A: JSON is a format that is easy to store, read, and share. Saving the extracted results as JSON makes it simple to integrate the data with other systems or use it for further analysis. It keeps the data well-organized and easy to access.
+Q: Can the system process a lot of disclosures?
+A: Yes, the system is built to handle large numbers of disclosures efficiently. The combination of batch processing, ElasticSearch, and vector embeddings allows it to process high volumes of text without slowing down or missing details.
+ 
+4. Domain Adaptation and Synthetic Data
+Q: Why did you fine-tune the model?
+A: The disclosures on KAP are written in Turkish, so we fine-tuned the model to better understand Turkish language and structure. Fine-tuning allows the model to adapt to the specific vocabulary, grammar, and style of Turkish business texts, improving its accuracy.
+Q: How was synthetic data created?
+A: Synthetic data was created by designing sentences and examples based on real-world disclosures. These examples included various ways keywords might appear in a disclosure. By training the model with this synthetic data, we helped it learn how to identify relevant information in Turkish disclosures.
+Q: Why is synthetic data important?
+A: Synthetic data is important because it allows us to train the model without needing a large amount of manually labeled data. Creating manual labels takes a lot of time and effort, but synthetic data is faster to generate and still helps the model learn effectively.
+Q: Can the system work with other languages?
+A: Yes, the system can be adapted for other languages. We would need to fine-tune the model with data in the target language to ensure it understands the new language correctly.
+Q: How does the fine-tuned model improve accuracy?
+A: The fine-tuned model learns the specific patterns and meanings of Turkish text. This helps it identify relevant information more effectively and avoid errors, making it highly accurate for KAP disclosures.
+ 
+5. Current Progress and Evaluation
+Q: How was auto-evaluation done?
+A: For auto-evaluation, we checked if the keywords appeared in the disclosures and assigned scores from 1 to 5 based on how relevant they were. These scores were used to calculate how well the system performed. This process helped us understand the system’s strengths and areas that needed improvement.
+Q: Why is human evaluation needed?
+A: Human evaluation is important because it provides the most reliable way to check the system’s accuracy. While auto-evaluation gives a general idea, human reviewers can catch subtle errors and ensure the system is making the right decisions. This helps improve the system’s overall performance.
+Q: What challenges have you faced in this project?
+A:
+1.	Some disclosures are very long, with attachments that can be dozens of pages. Processing these efficiently is challenging.
+2.	Creating labeled data for training and evaluation takes a lot of time and effort.
+3.	Ensuring that only the most relevant updates are sent to portfolio managers requires careful tuning of the system.
+Q: What has been completed so far?
+A: We have finished the planning, modeling, and auto-evaluation phases. Human evaluation is still ongoing, and the system is already being tested in the production phase.
+Q: What are the next steps in the project?
+A: The next steps are to complete human evaluation, optimize the system for better performance, and make sure it runs smoothly in production at a large scale.
+

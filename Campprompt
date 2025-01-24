@@ -1,0 +1,165 @@
+Revised and Improved Prompt (in English)
+
+Below is a prompt designed to analyze a company’s campaign description and extract specific, searchable information (tags/key details) that users might query to locate this campaign. The goal is to provide these details in a structured format so that a Retrieval-Augmented Generation (RAG) model can accurately retrieve the campaign during question answering.
+
+Task
+
+Review a campaign’s description and generate a structured list of concise tags (keywords) capturing critical campaign details. Focus on specific, searchable information that would help a RAG model match user queries to this campaign.
+
+Steps to Follow and Format
+	1.	Identify and extract information from the campaign text under the following categories. If a category does not appear in the campaign text, omit that category from your JSON output (i.e., do not include empty arrays):
+	•	campaign_objective: The campaign’s primary goal (e.g., "brand_awareness", "product_launch", "seasonal_sale").
+	•	target_audience: Demographics or interests (e.g., "young_adults", "gamers", "eco_conscious_consumers").
+	•	products_services: Items or services being promoted (e.g., "smartphones", "subscription_plans").
+	•	key_offers: Discounts, promotions, or incentives (e.g., "20_percent_off", "free_shipping").
+	•	timeframe: The duration or time window of the campaign (e.g., "q4_2023", "black_friday").
+	•	channels: Marketing or communication channels (e.g., "social_media", "email_newsletters").
+	•	geographic_scope: Geographic location(s) targeted (e.g., "global", "united_states").
+	•	unique_themes: Specific slogans, hashtags, or unique messages (e.g., "sustainability", "limited_edition", "#adventureawaits" → "adventureawaits").
+	2.	Output Format:
+	•	Provide your answer as a JSON object.
+	•	For each category you include, use lowercase letters and underscores (_) instead of spaces.
+	•	Keep the tags concise and avoid long phrases.
+	•	Do not add categories with no relevant data.
+	3.	Additional Guidelines:
+	•	If there are numeric values and symbols (e.g., “15% off”), convert them to a tag-friendly format (e.g., "15_percent_off").
+	•	If multiple tags belong to the same category, list each as a separate array item (e.g., "target_audience": ["outdoor_enthusiasts", "age_18_35"]).
+	•	Hashtags should either have the # removed or retained as all-lowercase (e.g., #AdventureAwaits → "adventureawaits").
+	•	Keep each piece of information distinct (e.g., “hiking gear” and “camping equipment” should be two separate tags under "products_services").
+
+Example Input
+
+"Our Summer 2023 campaign, #AdventureAwaits, targets outdoor enthusiasts aged 18-35 with 15% off hiking gear and camping equipment. Promoted via Instagram and TikTok in the US and Canada."
+
+Example Output
+
+{
+  "campaign_objective": ["seasonal_sale"],
+  "target_audience": ["outdoor_enthusiasts", "age_18_35"],
+  "products_services": ["hiking_gear", "camping_equipment"],
+  "key_offers": ["15_percent_off"],
+  "timeframe": ["summer_2023"],
+  "channels": ["instagram", "tiktok"],
+  "geographic_scope": ["us", "canada"],
+  "unique_themes": ["adventureawaits"]
+}
+
+Campaign Text (Input)
+
+{Insert campaign text here}
+
+Improvements Made and Why
+	1.	Clarity on Omitted Categories
+Specified that if a category has no relevant data, it should not appear in the JSON output at all. This prevents the generation of empty arrays or unnecessary fields.
+	2.	Tag Conversion Details
+Added explicit instructions on how to convert numeric values and symbols (e.g., “%” → “percent”) to maintain a consistent, query-friendly format.
+	3.	Hashtag Handling
+Clarified how to handle hashtags (removing the symbol, converting to lowercase) to avoid inconsistencies in the final output.
+	4.	Separate Tags for Multiple Entries
+Emphasized listing different pieces of information (e.g., multiple products or locations) as separate tags within the same category array.
+	5.	“Additional Guidelines” Section
+Consolidated all special instructions (numeric conversions, handling multiple entries, hashtags, etc.) for quick reference, making the prompt more user-friendly and comprehensive.
+
+
+
+
+
+
+
+# Revised and Improved Prompt (in English)
+
+Below is a prompt designed to analyze a company’s campaign description and extract specific, **searchable** information (tags/key details) that users might query to locate this campaign. The goal is to provide these details in a structured format so that a Retrieval-Augmented Generation (RAG) model can accurately retrieve the campaign during question answering.
+
+---
+
+## **Task**  
+Review a campaign’s description and generate a structured list of concise tags (keywords) capturing critical campaign details. Focus on **specific, searchable** information that would help a RAG model match user queries to this campaign.
+
+---
+
+## **Steps to Follow and Format**  
+1. Identify and extract information from the campaign text under the following categories. If a category does not appear in the campaign text, **omit** that category from your JSON output (i.e., do not include empty arrays):  
+   - **campaign_objective**: The campaign’s primary goal (e.g., `"brand_awareness"`, `"product_launch"`, `"seasonal_sale"`).  
+   - **target_audience**: Demographics or interests (e.g., `"young_adults"`, `"gamers"`, `"eco_conscious_consumers"`).  
+   - **products_services**: Items or services being promoted (e.g., `"smartphones"`, `"subscription_plans"`).  
+   - **key_offers**: Discounts, promotions, or incentives (e.g., `"20_percent_off"`, `"free_shipping"`).  
+   - **timeframe**: The duration or time window of the campaign (e.g., `"q4_2023"`, `"black_friday"`).  
+   - **channels**: Marketing or communication channels (e.g., `"social_media"`, `"email_newsletters"`).  
+   - **geographic_scope**: Geographic location(s) targeted (e.g., `"global"`, `"united_states"`).  
+   - **unique_themes**: Specific slogans, hashtags, or unique messages (e.g., `"sustainability"`, `"limited_edition"`, `"#adventureawaits" → "adventureawaits"`).  
+
+2. **Output Format**:  
+   - Provide your answer as a **JSON object**.  
+   - For each category you include, use **lowercase** letters and **underscores** (`_`) instead of spaces.  
+   - Keep the tags concise and avoid long phrases.  
+   - **Do not** add categories with no relevant data.  
+
+3. **Additional Guidelines**:  
+   - If there are numeric values and symbols (e.g., “15% off”), convert them to a tag-friendly format (e.g., `"15_percent_off"`).  
+   - If multiple tags belong to the same category, list each as a separate array item (e.g., `"target_audience": ["outdoor_enthusiasts", "age_18_35"]`).  
+   - Hashtags should either have the `#` removed or retained as all-lowercase (e.g., `#AdventureAwaits` → `"adventureawaits"`).  
+   - Keep each piece of information distinct (e.g., “hiking gear” and “camping equipment” should be two separate tags under `"products_services"`).
+
+---
+
+## **Example Input**  
+```plaintext
+"Our Summer 2023 campaign, #AdventureAwaits, targets outdoor enthusiasts aged 18-35 with 15% off hiking gear and camping equipment. Promoted via Instagram and TikTok in the US and Canada."
+
+{
+  "campaign_objective": ["seasonal_sale"],
+  "target_audience": ["outdoor_enthusiasts", "age_18_35"],
+  "products_services": ["hiking_gear", "camping_equipment"],
+  "key_offers": ["15_percent_off"],
+  "timeframe": ["summer_2023"],
+  "channels": ["instagram", "tiktok"],
+  "geographic_scope": ["us", "canada"],
+  "unique_themes": ["adventureawaits"]
+}
+
+
+
+
+# Prompt (in English, **Turkish Output Required**)
+
+Below is a prompt designed to analyze a company’s campaign description and extract specific, **searchable** information (tags/key details) that users might query to locate this campaign. The goal is to provide these details in a structured format so that a Retrieval-Augmented Generation (RAG) model can accurately retrieve the campaign during question answering. 
+
+> **Important**: Even though the prompt is provided in English, **your final output must be in Turkish** (including all JSON keys and values).
+
+---
+
+## **Task**
+Review a campaign’s description and generate a structured list of concise tags (keywords) capturing critical campaign details. Focus on **specific, searchable** information that would help a RAG model match user queries to this campaign. 
+
+---
+
+## **Steps to Follow and Format**
+1. Identify and extract information from the campaign text under the following categories. If a category does not appear in the campaign text, **omit** that category from your JSON output (i.e., do not include empty arrays):  
+   - **campaign_objective**: The campaign’s primary goal (e.g., `"brand_awareness"`, `"product_launch"`, `"seasonal_sale"`).  
+   - **target_audience**: Demographics or interests (e.g., `"young_adults"`, `"gamers"`, `"eco_conscious_consumers"`).  
+   - **products_services**: Items or services being promoted (e.g., `"smartphones"`, `"subscription_plans"`).  
+   - **key_offers**: Discounts, promotions, or incentives (e.g., `"20_percent_off"`, `"free_shipping"`).  
+   - **timeframe**: The duration or time window of the campaign (e.g., `"q4_2023"`, `"black_friday"`).  
+   - **channels**: Marketing or communication channels (e.g., `"social_media"`, `"email_newsletters"`).  
+   - **geographic_scope**: Geographic location(s) targeted (e.g., `"global"`, `"united_states"`).  
+   - **unique_themes**: Specific slogans, hashtags, or unique messages (e.g., `"sustainability"`, `"limited_edition"`, `"#adventureawaits" → "adventureawaits"`).  
+
+2. **Output Format**:  
+   - Provide your answer as a **JSON object**.  
+   - For each category you include, use **lowercase** letters and **underscores** (`_`) instead of spaces.  
+   - Keep the tags concise and avoid long phrases.  
+   - **Do not** add categories with no relevant data.  
+   - **All keys and values must be in Turkish**, translated from the information you find in the text.
+
+3. **Additional Guidelines**:  
+   - If there are numeric values and symbols (e.g., “15% off”), convert them to a tag-friendly format (e.g., `"15_yuzde_indirim"`) **in Turkish**.  
+   - If multiple tags belong to the same category, list each as a separate array item (e.g., `"hedef_kitle": ["dis_mekan_severler", "y_kusagi"]`).  
+   - Hashtags should either have the `#` removed or retained as all-lowercase (e.g., `#AdventureAwaits` → `"macera_sizi_bekliyor"`) **in Turkish** if you translate it.  
+   - Keep each piece of information distinct (e.g., “hiking gear” and “camping equipment” should be two separate tags translated into Turkish under `"urunler_hizmetler"`).  
+
+---
+
+## **Example Input**
+```plaintext
+"Our Summer 2023 campaign, #AdventureAwaits, targets outdoor enthusiasts aged 18-35 with 15% off hiking gear and camping equipment. Promoted via Instagram and TikTok in the US and Canada."
+

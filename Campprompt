@@ -244,3 +244,106 @@ Provide your answer in JSON format with 15 numbered Q&A pairs in Turkish, refere
   Q15: <Question in Turkish> A15: <Answer in Turkish>
 }
 ```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+****************************************************************************************************
+****************************************************************************************************
+
+
+
+
+You have a dataset in Turkish with the following format:
+
+Başlık: <A Turkish campaign headline>
+İçerik: <A Turkish campaign description>
+
+Imagine you are a curious potential customer who wants to learn more about this campaign. You will ask a series of detailed questions about the campaign based on the information provided in the “Başlık:” and “İçerik:” sections. Then, you will also provide the answers to these questions, ensuring they reflect the exact content and context given.
+
+
+### Detailed Instructions
+
+1. **Perspective & Tone**:
+   - Write your questions as if you are an interested individual who wants to learn more about the campaign details.
+   - The answers should be informative and directly address the question, based on the content of "Başlık:" and "İçerik:".
+
+2. **Language**:
+   - All questions (Q) and answers (A) must be in Turkish.
+
+3. **Reference to Başlık**:
+   - All of the questions must explicitly include the exact text found under "Başlık:".
+   - Referencing the “Başlık” directly in these questions helps clarify which campaign the Q&A belongs to.
+   - For example, if the “Başlık” is “Migros Kampanyası,” you could ask, “Migros Kampanyası hangi ürünleri kapsıyor?”
+
+4. **Number of Q&A Pairs**:
+   - Exactly 15 pairs, labeled from Q1/A1 to Q15/A15.
+
+5. **Content & Relevance**:
+   - Ensure each question is relevant to the campaign context described in the input.
+   - Avoid repeating questions or asking about unrelated topics.
+   - Every question must be directly related to the details of the campaign.  
+   - Each answer must draw upon or be inspired by the provided “İçerik:” text.  
+
+6. **Perspective**:  
+   - Write the questions as if you are genuinely curious and interested in the campaign details.  
+   - For instance, you might ask about pricing, duration, restrictions, benefits, returns, shipping, and so on.
+
+7. **JSON Formatting**:
+   - Present the output in JSON.
+   - Use the following format for each pair:
+   
+   "Q1": Peşin fiyatına 6 taksit kampanyası ne kadar süreyle geçerli olacak? 
+   "A1": Kampanya 30 gün boyunca devam edecek.
+   
+   "Q2": Migros kampanyası bitiş tarihi nedir? 
+   "A2": Migros kampanyası 31.01.2025 tarihinde sona erecek.
+
+8. **Variety of Questions**: 
+   - Include different question styles (e.g., direct questions, clarifying questions, open-ended questions).
+   - Keep answers concise, coherent, and reflective of the campaign details.
+   - Mix different question types (e.g., open-ended, yes/no, clarifying, scenario-based).  
+   - Ensure each question is unique to avoid repetition.
+
+9. **No Additional Commentary**:
+   - Your final output must consist of **only** the 15 Q&A pairs (Q1-A1 to Q15-A15), with no extra text, explanation, or apologies.
+
+10. **Example** (simplified):
+
+	"Q1": Migros kampanyası ne kadar süreyle geçerli olacak? 
+	"A1": Migros kampanyası 30 gün boyunca devam edecek.
+	
+	"Q2": Amazon kampanyasına hangi kartlar ile katılabilirim? 
+	"A1": Amazon kampanyasına tüm kredi kartlarıyla katılım sağlanabilir.
+	
+	...
+
+### Final Output
+
+Provide your answer in JSON format with 15 numbered Q&A pairs in Turkish, referencing both "Başlık:" and "İçerik:" where appropriate.
+
+```json
+{
+  "Q1": <Question in Turkish> 
+  "A1": <Answer in Turkish>
+  
+  "Q2": <Question in Turkish> 
+  "A2": <Answer in Turkish>
+  
+  ... 
+  
+  "Q15": <Question in Turkish> 
+  "A15": <Answer in Turkish>
+}
+```

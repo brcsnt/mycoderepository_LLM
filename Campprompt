@@ -754,3 +754,24 @@ Based on the query, you will produce a structured JSON response. Follow these in
 
 ## Your Task
 Start analyzing the query below and respond with the appropriate JSON structure.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+If the user's query alone does not provide enough information to classify it as TYPE_1 or TYPE_2, analyze relevant messages from the system history:
+
+Use the history to identify references to specific campaign codes or campaign details (TYPE_1).
+If the history contains broader campaign-related questions or search-like queries, classify it as TYPE_2.
+Based on the query (and system history, if applicable), you will produce a structured JSON response. Follow these instructions:

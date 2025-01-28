@@ -460,3 +460,156 @@ Based on the query, you will produce a structured JSON response. Follow these in
 ## Your Task
 Start analyzing the query below and respond with the appropriate JSON structure.
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+import pandas as pd
+
+# Soru verilerini liste halinde tanımlama
+sorular = [
+    {
+        "Soru No": 1,
+        "Soru": "Kampanya kodu XYZ789 ile ilgili, 2024 yılının Ekim ayında geçerli olan \"Büyük İndirim\" kampanyasının ikinci aşamasının şartları nelerdir?",
+        "Soru Tipi": "Spesifik Kampanya Sorusu"
+    },
+    {
+        "Soru No": 2,
+        "Soru": "Elektronik ürünlerde yıl sonu kampanyaları genellikle hangi avantajları sunar ve katılım koşulları nasıldır?",
+        "Soru Tipi": "Kampanya Arama Sorusu"
+    },
+    {
+        "Soru No": 3,
+        "Soru": "ABCD1234 kodlu kampanyanın, hem online hem de mağaza içi alışverişlerde geçerli olup olmadığını nasıl kontrol edebilirim?",
+        "Soru Tipi": "Spesifik Kampanya Sorusu"
+    },
+    {
+        "Soru No": 4,
+        "Soru": "Sonbahar sezonunda uygulanan genel indirim kampanyaları genellikle hangi ürün kategorilerini kapsar?",
+        "Soru Tipi": "Kampanya Arama Sorusu"
+    },
+    {
+        "Soru No": 5,
+        "Soru": "Kampanya kodu LMN456 ile başlatılan \"Sadakat Programı\"nın, 5. üyelik seviyesine yükselen müşterilere sunduğu özel teklifler nelerdir?",
+        "Soru Tipi": "Spesifik Kampanya Sorusu"
+    },
+    {
+        "Soru No": 6,
+        "Soru": "Mobil operatörlerin yeni yıl kampanyalarında genellikle hangi tür indirimler ve ek hizmetler sunulmaktadır?",
+        "Soru Tipi": "Kampanya Arama Sorusu"
+    },
+    {
+        "Soru No": 7,
+        "Soru": "Kampanya kodu QRS321'un 15 Nisan tarihli \"Bahar Fırsatları\" kampanyasında, indirim oranlarının ürün bazında dağılımı nasıl olmuştur?",
+        "Soru Tipi": "Spesifik Kampanya Sorusu"
+    },
+    {
+        "Soru No": 8,
+        "Soru": "Giyim sektöründe uygulanan genel kampanya stratejileri nelerdir ve müşteri çekmek için hangi yöntemler kullanılır?",
+        "Soru Tipi": "Kampanya Arama Sorusu"
+    },
+    {
+        "Soru No": 9,
+        "Soru": "Kampanya kodu TUV654 ile düzenlenen \"Öğrenci İndirimi\" kampanyasının, mezuniyet sonrası geçiş sürecindeki avantajları nelerdir?",
+        "Soru Tipi": "Spesifik Kampanya Sorusu"
+    },
+    {
+        "Soru No": 10,
+        "Soru": "Restoran zincirlerinin yaz aylarında uyguladığı kampanyalarda genellikle hangi promosyon türlerine rastlanır?",
+        "Soru Tipi": "Kampanya Arama Sorusu"
+    },
+    {
+        "Soru No": 11,
+        "Soru": "Kampanya kodu WXY987 kapsamında sunulan \"Erken Rezervasyon\" fırsatının, belirli otel kategorileri için sağladığı ek avantajlar nelerdir?",
+        "Soru Tipi": "Spesifik Kampanya Sorusu"
+    },
+    {
+        "Soru No": 12,
+        "Soru": "Online alışveriş sitelerinin Black Friday dönemi kampanyalarında genellikle hangi ürünlerde en yüksek indirimler sağlanmaktadır?",
+        "Soru Tipi": "Kampanya Arama Sorusu"
+    },
+    {
+        "Soru No": 13,
+        "Soru": "Kampanya kodu EFG654'ün, uluslararası müşterilere sunduğu özel avantajlar ve geçerlilik süresi hakkında detaylı bilgi alabilir miyim?",
+        "Soru Tipi": "Spesifik Kampanya Sorusu"
+    },
+    {
+        "Soru No": 14,
+        "Soru": "Sağlık ve güzellik sektöründeki kampanyalarda sıkça karşılaşılan promosyon türleri ve bunların etkinliği hakkında ne düşünüyorsunuz?",
+        "Soru Tipi": "Kampanya Arama Sorusu"
+    },
+    {
+        "Soru No": 15,
+        "Soru": "Kampanya kodu HIJ321 ile sunulan \"Haftasonu Fırsatları\"nın, farklı şehirlerdeki mağazalarda uygulanma şekli nasıldır?",
+        "Soru Tipi": "Spesifik Kampanya Sorusu"
+    },
+    {
+        "Soru No": 16,
+        "Soru": "Ev aletleri satın alırken uygulanan genel kampanyalarda hangi ödeme yöntemleri tercih edilmektedir ve avantajları nelerdir?",
+        "Soru Tipi": "Kampanya Arama Sorusu"
+    },
+    {
+        "Soru No": 17,
+        "Soru": "Kampanya kodu KLM852'nin, belirli elektronik cihazlarda sağladığı ek garanti seçenekleri hakkında bilgi verebilir misiniz?",
+        "Soru Tipi": "Spesifik Kampanya Sorusu"
+    },
+    {
+        "Soru No": 18,
+        "Soru": "Seyahat acentelerinin yaz tatili kampanyalarında sunduğu paketlerde genellikle hangi ek hizmetler yer almaktadır?",
+        "Soru Tipi": "Kampanya Arama Sorusu"
+    },
+    {
+        "Soru No": 19,
+        "Soru": "Kampanya kodu NOP963 ile başlatılan \"Sadakat Bonusu\"nun, uzun vadeli üyeliklerde sağladığı avantajlar nelerdir?",
+        "Soru Tipi": "Spesifik Kampanya Sorusu"
+    },
+    {
+        "Soru No": 20,
+        "Soru": "Kozmetik markalarının yılbaşı kampanyalarında sıkça kullandığı pazarlama stratejileri ve müşteri etkileşimini artırma yöntemleri nelerdir?",
+        "Soru Tipi": "Kampanya Arama Sorusu"
+    },
+    {
+        "Soru No": 21,
+        "Soru": "Kampanya kodu UVW147'nin, belirli spor malzemeleri kategorisinde geçerli olan indirim oranları ve stok durumları hakkında güncel bilgiye nasıl ulaşabilirim?",
+        "Soru Tipi": "Spesifik Kampanya Sorusu"
+    },
+    {
+        "Soru No": 22,
+        "Soru": "E-ticaret platformlarının sezon sonu indirim kampanyalarında genellikle karşılaşılan lojistik ve teslimat süreçleri nasıl yönetilmektedir?",
+        "Soru Tipi": "Kampanya Arama Sorusu"
+    },
+    {
+        "Soru No": 23,
+        "Soru": "Kampanya kodu ABC258 ile düzenlenen \"Yeni Ürün Tanıtımı\" kampanyasının, ilk hafta satış performansına etkisi ne olmuştur?",
+        "Soru Tipi": "Spesifik Kampanya Sorusu"
+    },
+    {
+        "Soru No": 24,
+        "Soru": "Otomotiv sektöründeki kampanyalarda genellikle hangi finansman seçenekleri sunulmakta ve müşteri tercihi nasıl etkilenmektedir?",
+        "Soru Tipi": "Kampanya Arama Sorusu"
+    },
+    {
+        "Soru No": 25,
+        "Soru": "Kampanya kodu DEF369'un, belirli model arabalar için sağladığı düşük faizli kredi imkanları hakkında detaylı bilgi alabilir miyim?",
+        "Soru Tipi": "Spesifik Kampanya Sorusu"
+    }
+]
+
+# DataFrame oluşturma
+df = pd.DataFrame(sorular)
+
+# DataFrame'i görüntüleme
+print(df)

@@ -229,3 +229,201 @@ if st.button("Gönder"):
         response = chat_with_bot(user_input)
         st.write(response)
 
+
+
+------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+
+import streamlit as st
+import logging
+import os
+import re
+from langchain.chat_models import ChatOpenAI
+from langchain.chains import RetrievalQA
+from langchain.memory import ConversationBufferMemory
+from langchain.embeddings import OpenAIEmbeddings
+from langchain.vectorstores import Chroma
+from langchain.docstore.document import Document
+
+# 1️⃣ Logger Ayarla
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
+
+# 2️⃣ OpenAI API Anahtarı Tanımla
+os.environ["OPENAI_API_KEY"] = "your_api_key_here"  # API anahtarınızı buraya girin
+
+# 3️⃣ Örnek Kampanya Verileri
+campaigns = [
+    {"code": "KAMP001", "title": "Migros İndirim Kampanyası", "content": "Migros marketlerinde %20 indirim! 1-10 Şubat arasında geçerlidir.", "start_date": "01-02-2024", "end_date": "10-02-2024"},
+    {"code": "KAMP002", "title": "Beyaz Eşya Kampanyası", "content": "Beyaz eşyalar 15 Mart'a kadar özel fiyatlarla!", "start_date": "01-03-2024", "end_date": "15-03-2024"},
+    {"code": "KAMP003", "title": "Giyim Sezon Sonu İndirimi", "content": "Tüm giyim ürünlerinde %30 indirim!", "start_date": "01-04-2024", "end_date": "30-04-2024"}
+]
+
+# Parametrik olarak top_n değeri (şu anda 3 olarak ayarlandı)
+TOP_N = 3
+
+# Takip sorguları için maksimum sayıyı belirleyelim (örneğin, 5)
+MAX_FOLLOW_UP = 5
+
+# 4️⃣ OpenAI Embeddings kullanarak ChromaDB oluştur ve doldur
+embeddings = OpenAIEmbeddings()
+vector_store = Chroma(embedding_function=embeddings)
+docs = [
+    Document(
+        page_content=f"{c['title']}: {c['content']} (Geçerlilik: {c['start_date']} - {c['end_date']})",
+        metadata={"code": c["code"]}
+    )
+    for c in campaigns
+]
+vector_store.add_documents(docs)
+# TOP_N kriteri kullanılarak en iyi sonuçlar alınır.
+retriever = vector_store.as_retriever(search_kwargs={"k": TOP_N})
+
+# 5️⃣ LLM Modeli ve Prompt Ayarları
+system_prompt = "Sen bir reklam kampanya asistanısın. Kullanıcıya kampanyalar hakkında bilgi ver, yanıtlarını sadece kampanya metinlerine dayandır."
+follow_up_prompt = (
+    "Bu bir takip (follow-up) sorusudur. Aşağıdaki konuşma geçmişini ve listelenen kampanyaları inceleyerek, "
+    "kullanıcının hangi kampanya hakkında detay istediğini belirle ve sadece o kampanyanın detaylarını ver."
+)
+
+llm = ChatOpenAI(model_name="gpt-4", temperature=0, system_prompt=system_prompt)
+qa_chain = RetrievalQA.from_chain_type(llm=llm, retriever=retriever)
+
+# 6️⃣ Konuşma Hafızası ve Global Durum Değişkenleri
+memory = ConversationBufferMemory(memory_key="chat_history", return_messages=True)
+last_retrieved_campaigns = []   # Son sorgudan dönen kampanyaların listesini saklar
+follow_up_count = 0              # Takip sorguları için sayacı tutar
+
+# 7️⃣ Yeni Kampanya Sorgularını Doğal Dil ile Tespit Eden Fonksiyon
+def detect_new_campaign(user_input: str):
+    """
+    Eğer sorguda doğrudan kampanya kodu geçmiyorsa,
+    vector store üzerinden ilgili kampanyaları getirir.
+    
+    - Eğer tek bir kampanya bulunursa, kampanyanın content’i ve kullanıcının sorusu ile LLM'den yanıt alınır.
+    - Eğer birden fazla kampanya bulunursa, TOP_N kadar sonuç liste halinde sunulur.
+    """
+    global last_retrieved_campaigns
+    if re.search(r"KAMP\d{3}", user_input, re.IGNORECASE):
+        return None  # Sorguda açık kampanya kodu varsa bu fonksiyon devreye girmez.
+
+    retrieved_docs = retriever.get_relevant_documents(user_input)
+    if not retrieved_docs:
+        return "Üzgünüm, sorgunuza uygun kampanya bulunamadı."
+    
+    last_retrieved_campaigns = retrieved_docs
+
+    if len(retrieved_docs) == 1:
+        doc = retrieved_docs[0]
+        response = qa_chain.run(
+            f"{system_prompt}\nKullanıcı: {user_input}\nBu kampanya hakkında: {doc.page_content}"
+        )
+        return response
+    else:
+        # Birden fazla kampanya bulunduğunda, TOP_N kadar sonuç liste halinde sunulur.
+        response_lines = ["İlgili kampanyalar:"]
+        for i, doc in enumerate(retrieved_docs[:TOP_N], start=1):
+            title = doc.page_content.split(":")[0].strip()
+            code = doc.metadata.get("code", "Bilinmiyor")
+            response_lines.append(f"{i}. {code}: {title}")
+        return "\n".join(response_lines)
+
+# 8️⃣ Kullanıcı Girdilerini İşleyen Fonksiyon
+def chat_with_bot(user_input: str):
+    global last_retrieved_campaigns, follow_up_count
+    try:
+        logger.info(f"Kullanıcı girişi: {user_input}")
+        chat_history = memory.load_memory_variables({})["chat_history"]
+
+        # (A) Eğer sorguda açıkça kampanya kodu (örn. "KAMP001") varsa:
+        code_match = re.search(r"(KAMP\d{3})", user_input, re.IGNORECASE)
+        if code_match:
+            campaign_code = code_match.group(1).upper()
+            selected_doc = next((doc for doc in docs if doc.metadata.get("code", "").upper() == campaign_code), None)
+            if selected_doc:
+                # Yeni kampanya sorgusu olduğundan, global liste ve (opsiyonel) geçmiş temizlenir.
+                last_retrieved_campaigns = [selected_doc]
+                follow_up_count = 0
+                memory.clear()  # Konuşma geçmişini temizle
+                # Kampanyanın content’i ve kullanıcının sorusu ile LLM'den yanıt alınır.
+                response = qa_chain.run(
+                    f"{system_prompt}\nKullanıcı: {user_input}\nBu kampanya hakkında: {selected_doc.page_content}"
+                )
+                memory.save_context({"input": user_input}, {"output": response})
+                return response
+            else:
+                return "Belirtilen kampanya bulunamadı."
+
+        # (B) Eğer daha önceki sorgudan dönen kampanya listesi boşsa, yeni sorgu olarak ele al:
+        if not last_retrieved_campaigns:
+            new_campaign_response = detect_new_campaign(user_input)
+            memory.save_context({"input": user_input}, {"output": new_campaign_response})
+            return new_campaign_response
+
+        # (C) Gelen sorgu bir takip (follow-up) sorgusuyse:
+        # Eğer takip sorgularının sayısı maksimum değeri aştıysa:
+        if follow_up_count >= MAX_FOLLOW_UP:
+            # Maksimum takip sayısına ulaşıldığında, kullanıcıya yeni kampanya sorgusu yapması istenir.
+            last_retrieved_campaigns = []
+            memory.clear()  # Konuşma geçmişini temizle
+            follow_up_count = 0
+            return "Maksimum takip soru sınırına ulaşıldı. Lütfen yeni kampanya sorgusu yapınız."
+
+        # Takip sorgusunda, LLM’den önceki listelenen kampanyalar ve konuşma geçmişine dayanarak,
+        # kullanıcının hangi kampanyaya atıfta bulunduğunu belirlemesi istenir.
+        campaigns_context = "\n".join(
+            f"{doc.metadata.get('code','Bilinmiyor')}: {doc.page_content}"
+            for doc in last_retrieved_campaigns
+        )
+        determination_prompt = (
+            f"Aşağıdaki listelenen kampanyalar içerisinden, kullanıcının aşağıdaki sorgusuyla en çok hangi kampanyaya atıfta bulunduğunu belirle. "
+            f"Eğer sorgu, listelenen kampanyalarla ilgili değilse, sadece 'yeni kampanya' yaz.\n\n"
+            f"Listelenen Kampanyalar:\n{campaigns_context}\n\n"
+            f"Kullanıcının Sorgusu: {user_input}\n\n"
+            f"Yanıt (sadece ilgili kampanya kodunu ya da 'yeni kampanya' ifadesini ver): "
+        )
+        determination = llm.run(determination_prompt).strip().lower()
+        logger.info(f"Determination: {determination}")
+
+        # Eğer LLM yanıtında "yeni kampanya" ifadesi geçiyorsa:
+        if "yeni kampanya" in determination:
+            last_retrieved_campaigns = []
+            memory.clear()  # Konuşma geçmişini temizle
+            follow_up_count = 0
+            new_campaign_response = detect_new_campaign(user_input)
+            memory.save_context({"input": user_input}, {"output": new_campaign_response})
+            return new_campaign_response
+        else:
+            # LLM yanıtından tespit edilen kampanya kodunu kullanarak ilgili kampanyayı seçelim.
+            campaign_code_match = re.search(r"(KAMP\d{3})", determination, re.IGNORECASE)
+            if campaign_code_match:
+                campaign_code = campaign_code_match.group(1).upper()
+                selected_doc = next((doc for doc in last_retrieved_campaigns if doc.metadata.get("code", "").upper() == campaign_code), None)
+                if not selected_doc:
+                    return "Listede belirtilen kampanya bulunamadı."
+            else:
+                return "Lütfen hangi kampanyadan bahsettiğinizi netleştiriniz."
+            
+            follow_up_count += 1
+            # Kampanyanın content’i ve kullanıcının sorusu ile LLM’den yardım alınır, son yanıt ekrana basılır.
+            response = qa_chain.run(
+                f"{follow_up_prompt}\nKullanıcı: {user_input}\nBu kampanya hakkında: {selected_doc.page_content}\nKonuşma Geçmişi:\n{chat_history}"
+            )
+            memory.save_context({"input": user_input}, {"output": response})
+            return response
+
+    except Exception as e:
+        logger.error(f"Chat işleminde hata: {e}")
+        return "Bir hata oluştu, lütfen tekrar deneyin."
+
+# 9️⃣ Streamlit Arayüzü
+st.title("📢 Reklam Kampanya Chatbotu")
+st.write("Sorularınızı sorun, kampanyalar hakkında bilgi alın!")
+
+user_input = st.text_input("Mesajınızı girin:")
+if st.button("Gönder"):
+    if user_input:
+        response = chat_with_bot(user_input)
+        st.write(response)
+

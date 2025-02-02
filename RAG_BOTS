@@ -1,1 +1,128 @@
 
+import streamlit as st
+import logging
+from langchain.chat_models import ChatOpenAI
+from langchain.chains import RetrievalQA
+from langchain.memory import ConversationBufferMemory
+from langchain.embeddings import OpenAIEmbeddings
+from langchain.vectorstores import Chroma
+from langchain.docstore.document import Document
+import os
+import re
+
+# 1️⃣ Logger Ayarla
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
+
+# 2️⃣ API Anahtarı Tanımla
+os.environ["OPENAI_API_KEY"] = "your_api_key_here"
+
+# 3️⃣ Örnek Kampanya Verileri
+campaigns = [
+    {"code": "KAMP001", "title": "Migros İndirim Kampanyası", "content": "Migros marketlerinde %20 indirim! 1-10 Şubat arasında geçerlidir.", "start_date": "01-02-2024", "end_date": "10-02-2024"},
+    {"code": "KAMP002", "title": "Beyaz Eşya Kampanyası", "content": "Beyaz eşyalar 15 Mart'a kadar özel fiyatlarla!", "start_date": "01-03-2024", "end_date": "15-03-2024"},
+    {"code": "KAMP003", "title": "Giyim Sezon Sonu İndirimi", "content": "Tüm giyim ürünlerinde %30 indirim!", "start_date": "01-04-2024", "end_date": "30-04-2024"}
+   
+]
+
+# 4️⃣ OpenAI Embeddings kullanarak ChromaDB oluştur ve doldur
+embeddings = OpenAIEmbeddings()
+vector_store = Chroma(embedding_function=embeddings)
+
+# Kampanya verilerini ChromaDB'ye ekleyelim
+docs = [Document(page_content=f"{c['title']}: {c['content']} (Geçerlilik: {c['start_date']} - {c['end_date']})", metadata={"code": c["code"]}) for c in campaigns]
+vector_store.add_documents(docs)
+retriever = vector_store.as_retriever(search_kwargs={"k": 3})
+
+# 5️⃣ LLM Modeli Tanımla ve Sistem Prompt Ekle
+system_prompt = "Sen bir reklam kampanya asistanısın. Kullanıcıya kampanyalar hakkında bilgi ver, ama sadece kampanya metinlerinden referans al."
+llm = ChatOpenAI(model_name="gpt-4", temperature=0, system_prompt=system_prompt)
+qa_chain = RetrievalQA.from_chain_type(llm=llm, retriever=retriever)
+
+# 6️⃣ Sohbet Hafızasını (Memory) Tanımla
+memory = ConversationBufferMemory(memory_key="chat_history", return_messages=True)
+previous_retrieved_campaigns = {}
+follow_up_count = 0
+max_follow_up = 5  # Kullanıcının aynı kampanya içinde sorabileceği maksimum takip sorusu
+
+# 7️⃣ Kampanya Kodunu Çıkart ve Doğrudan Bilgi Getir
+def extract_campaign_code(user_input):
+    try:
+        match = re.search(r"KAMP\d{3}", user_input)
+        return match.group(0) if match else None
+    except Exception as e:
+        logger.error(f"Kampanya kodu çıkarma hatası: {e}")
+        return None
+
+# 8️⃣ Yeni Kampanyaya Geçişi Algıla
+def detect_new_campaign(user_input):
+    global previous_retrieved_campaigns, follow_up_count
+    
+    try:
+        logger.info(f"Yeni kampanya tespiti için giriş alındı: {user_input}")
+        
+        campaign_code = extract_campaign_code(user_input)
+        if campaign_code:
+            docs = retriever.get_relevant_documents(campaign_code)
+            if docs:
+                previous_retrieved_campaigns[campaign_code] = docs[0]
+                follow_up_count = 0  # Yeni kampanya başladığında follow-up sayacını sıfırla
+                logger.info(f"Belirtilen kampanya kodu bulundu: {campaign_code}, İçerik: {docs[0].page_content}")
+                return docs[0].page_content
+        
+        # VectorStore kullanarak en alakalı top_n kampanyayı bul
+        similar_docs = retriever.get_relevant_documents(user_input)
+        if similar_docs:
+            previous_retrieved_campaigns = {f"KAMP{i+1:03}": doc for i, doc in enumerate(similar_docs)}
+            follow_up_count = 0  # Yeni kampanya bulunduğunda follow-up sıfırlanır
+            result = "\n".join([f"{key} - {doc.page_content.split(' ', 5)[0]}..." for key, doc in previous_retrieved_campaigns.items()])
+            return f"En alakalı kampanyalar:\n{result}"
+        
+        return "Uygun kampanya bulunamadı."
+    except Exception as e:
+        logger.error(f"Yeni kampanya tespitinde hata: {e}")
+        return "Bir hata oluştu, lütfen tekrar deneyin."
+
+# 9️⃣ Kullanıcıdan Giriş Al ve Yanıt Döndür
+def chat_with_bot(user_input):
+    global previous_retrieved_campaigns, follow_up_count
+    
+    try:
+        logger.info(f"Kullanıcı girişi: {user_input}")
+        
+        if follow_up_count >= max_follow_up:
+            return "⚠ Maksimum takip soru sınırına ulaşıldı. Yeni bir kampanya hakkında soru sorabilirsiniz."
+        
+        chat_history = memory.load_memory_variables({})["chat_history"]
+        campaign_info = detect_new_campaign(user_input)
+        if campaign_info:
+            return campaign_info
+        
+        match = re.search(r"(KAMP\d{3}) hakkında (.+)\??", user_input)
+        if match:
+            campaign_code = match.group(1)
+            if campaign_code in previous_retrieved_campaigns:
+                selected_campaign = previous_retrieved_campaigns[campaign_code]
+                follow_up_count += 1  # Takip sorusu sayısını artır
+                logger.info(f"Seçilen kampanya: {selected_campaign}")
+                return qa_chain.run(f"{chat_history}\nKullanıcı: {user_input}\nBu kampanya hakkında: {selected_campaign.page_content}")
+            return "⚠ Geçersiz kampanya kodu. Lütfen geçerli bir kampanya girin."
+        
+        follow_up_count += 1  # Genel sorular için de takip sorusu sayısını artır
+        response = qa_chain.run(f"{chat_history}\nKullanıcı: {user_input}")
+        memory.save_context({"input": user_input}, {"output": response})
+        logger.info(f"LLM Yanıtı: {response}")
+        return response
+    except Exception as e:
+        logger.error(f"Chat işleminde hata: {e}")
+        return "Bir hata oluştu, lütfen tekrar deneyin."
+
+# 🔟 Streamlit Arayüzü
+st.title("📢 Reklam Kampanya Chatbotu")
+st.write("Sorularınızı sorun, kampanyalar hakkında bilgi alın!")
+
+user_input = st.text_input("Mesajınızı girin:")
+if st.button("Gönder"):
+    if user_input:
+        response = chat_with_bot(user_input)
+        st.write(response)

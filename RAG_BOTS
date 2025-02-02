@@ -235,6 +235,40 @@ if st.button("Gönder"):
 
 
 
+"""
+
+
+Evet, kodun son hali yukarıdaki diyalog akışına uygun şekilde cevap verebilecek şekilde tasarlanmıştır. Örneğin:
+
+Kullanıcı: "KAMP001 kampanyası nedir ?"
+
+Sorguda açıkça "KAMP001" yer aldığından, sistem doğrudan bu kampanyayı tespit eder, global kampanya listesi ve takip sayacı sıfırlanır (konuşma geçmişi temizlenir) ve KAMP001’in içerik bilgisi ile LLM’ye sorgu gönderilerek yanıt üretilir.
+Kullanıcı: "Bana Migros kampanyasının detaylarını söyle."
+
+Sorguda açık bir kampanya kodu olmadığı için, sistem vector store üzerinden TOP_N (3) kriterine göre ilgili kampanyaları arar. Eğer Migros ile ilgili kampanyalar varsa, bu kampanyaların kod ve başlık bilgileri liste halinde (örneğin, “1. KAMP001: Migros İndirim Kampanyası” gibi) sunulur.
+Kullanıcı: "2.gelen kampanyanın içeriği nedir?"
+
+Bu takip (follow-up) sorgusunda, sistem önceki listelenen kampanyalar ve konuşma geçmişini LLM’ye göndererek kullanıcının hangi kampanyaya atıfta bulunduğunu belirlemesini ister. LLM’nin tespit ettiği kampanyanın içerik bilgisi, kullanıcının sorusu ile birlikte LLM’ye gönderilir ve LLM’nin cevabı ekrana basılır.
+Kullanıcı: "Peki 3.sıradaki kampanyanın detayı neydi yazar mısın?"
+
+Aynı şekilde, LLM önceki listeden (örneğin, 3. sıradaki kampanya) hangi kampanyanın kastedildiğini belirler, ilgili kampanyanın içerik bilgisi ve kullanıcı sorusu ile LLM’den nihai yanıt alınır.
+Kullanıcı: "Peki sonuncu yazan kampanyanın detayı?"
+
+LLM, "sonuncu" ifadesini de göz önünde bulundurarak önceki listeden en son elemanı tespit eder ve bu kampanyanın detayları, kullanıcının sorusu ile birlikte LLM’ye gönderilerek yanıt üretilir.
+Kullanıcı: "Beyaz eşya kampanyasının detayları neydi peki"
+
+Eğer LLM, bu sorgunun önceki listelenen kampanyalarla ilişkili olmadığını belirlerse, sistem global durumu (last_retrieved_campaigns ve konuşma geçmişini) temizler ve yeni kampanya sorgusu olarak "Beyaz Eşya Kampanyası"nı vector store’dan arar. Böylece yeni kampanya sorgusu üzerinden ilgili kampanyanın detayları LLM’den alınır.
+Kullanıcı: "KAMP003 kampanyasının detayları nedir ?"
+
+Sorguda açıkça "KAMP003" yer aldığından, sistem doğrudan KAMP003’ü tespit eder, global durum sıfırlanır ve KAMP003’ün içerik bilgisi ile LLM’ye sorgu gönderilerek yanıt alınır.
+Ayrıca, takip sorgularında maksimum takip sayısı (örneğin MAX_FOLLOW_UP = 5) uygulanmakta; eğer kullanıcı 5 takip sorgusuna ulaşırsa, sistem otomatik olarak global durumu temizleyip yeni kampanya sorgusu yapılmasını isteyecektir.
+
+Bu yapı sayesinde, kullanıcı hiçbir ek numeric veya sıralama girdisi vermeden, tamamen doğal diyalog akışı içerisinde doğru kampanyanın tespit edilip, ilgili kampanyanın içerik bilgisiyle LLM tarafından üretilen yanıt ekrana basılacaktır.
+
+
+"""
+
+
 import streamlit as st
 import logging
 import os

@@ -1434,3 +1434,139 @@ if __name__ == "__main__":
     HistoryManager.initialize()
     render_sidebar()
     render_chat_interface()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+**Akış Diyagramı (Mermaid.js Syntax):**
+
+```mermaid
+%%{init: {'theme': 'neutral', 'themeVariables': { 'fontSize': '14px'}}}%%
+graph TD
+    A[Kullanıcı Sorgusu] --> B{Kampanya Kodu Var mı?}
+    B -->|Evet| C[Tam Eşleşme Ara]
+    B -->|Hayır| D[Vektörel Benzerlik Ara]
+    C --> E{Sonuç Bulundu mu?}
+    E -->|Evet| F[Detayları Göster]
+    E -->|Hayır| D
+    D --> G[Sonuçları Formatla]
+    G --> H{Önceki Sonuçlarda Referans Var mı?}
+    H -->|Evet| I[ContextManager'dan Getir]
+    H -->|Hayır| J[Yeni Sonuçları Göster]
+    I --> K[İlgili Kampanya Detayını Göster]
+    J --> L[Sonuçları Tarihçeye Ekle]
+    K --> L
+    F --> L
+    L --> M[Tarihçe Sınır Kontrolü]
+    M -->|MAX_HISTORY Aşıldı| N[Eski Mesajları Temizle]
+    M -->|Limit Dahilinde| O[Sonraki Sorguyu Bekle]
+    N --> O
+    O --> A
+```
+
+**Akış Açıklamaları:**
+
+1. **Başlangıç:** Kullanıcı Streamlit arayüzüne sorgu giriyor
+2. **Kampanya Kodu Analizi:** 
+   - Sorguda kampanya kodu olup olmadığı kontrol ediliyor
+3. **Tam Eşleşme Arama:** 
+   - Kod varsa Elasticsearch'te `term` query ile direkt arama
+4. **Vektörel Arama:** 
+   - Kod yoksa veya bulunamazsa embedding model ile semantik arama
+5. **Context Kontrolü:** 
+   - "ikinci", "son" gibi referanslar için ContextManager kontrol ediliyor
+6. **Sonuç Formatlama:** 
+   - Sonuçlar kullanıcı dostu formatta düzenleniyor
+7. **Tarihçe Yönetimi:** 
+   - `MAX_HISTORY_LENGTH` parametresine göre otomatik temizlik
+8. **Döngü:** 
+   - Sistem yeni sorgular için hazır bekliyor
+
+**Önemli Karar Noktaları:**
+
+```mermaid
+graph TD
+    A[Referanslı Sorgu] --> B{ContextManager'da Kayıt Var mı?}
+    B -->|Evet| C[Index ile Kampanya Getir]
+    B -->|Hayır| D[Elasticsearch'te Yeniden Ara]
+    C --> E[Detayları Göster]
+    D --> F[Yeni Sonuçları İşle]
+```
+
+**Sistem Bileşenleri:**
+
+```mermaid
+classDiagram
+    class HistoryManager{
+        +initialize()
+        +add_message()
+        +clear_history()
+        +get_context_history()
+    }
+    
+    class ContextManager{
+        +update_search_results()
+        +get_campaign_by_index()
+    }
+    
+    class Elasticsearch{
+        +exact_search()
+        +vector_search()
+    }
+    
+    class OpenAI{
+        +extract_code()
+        +generate_response()
+    }
+    
+    HistoryManager --> ContextManager : Veri Paylaşımı
+    Elasticsearch --> ContextManager : Sonuçları Günceller
+    OpenAI --> HistoryManager : Tarihçeyi Kullanır
+```
+
+**Örnek Çalışma Akışı:**
+
+```mermaid
+sequenceDiagram
+    participant Kullanıcı
+    participant Streamlit
+    participant ContextManager
+    participant Elasticsearch
+    
+    Kullanıcı->>Streamlit: "Migros kampanyaları"
+    Streamlit->>Elasticsearch: vector_search("Migros kampanyaları")
+    Elasticsearch-->>Streamlit: 3 sonuç döner
+    Streamlit->>ContextManager: Sonuçları kaydet
+    Streamlit->>Kullanıcı: Sonuçları göster
+    
+    Kullanıcı->>Streamlit: "İkinci kampanyayı açıkla"
+    Streamlit->>ContextManager: get_campaign_by_index(2)
+    ContextManager-->>Streamlit: MIG-FAMILY detayları
+    Streamlit->>Kullanıcı: Kampanya detaylarını göster
+```
+
+Bu yapı, kullanıcı etkileşimlerini yönetirken hem performans hem de bağlamsal tutarlılık sağlar. Tüm akış parametrik kontrollerle optimize edilmiştir.

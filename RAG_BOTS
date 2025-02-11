@@ -1723,3 +1723,76 @@ if __name__ == "__main__":
     st.subheader("💬 Sohbet Geçmişi")
     for msg in chat_history[-3:]:  # En son 3 mesajı göster
         st.write(msg)
+
+
+
+
+
+
+
+import streamlit as st
+from langchain.chains.conversation.memory import ConversationBufferWindowMemory
+from langchain_community.chat_models import AzureChatOpenAI
+from langchain.callbacks.base import BaseCallbackHandler
+
+# 📌 Kampanya kodu kontrolü
+def is_valid_campaign_code(code):
+    """
+    Kampanya kodunun geçerli olup olmadığını kontrol eden fonksiyon.
+    - Tamamen sayısal mı?
+    - "CAMP-12345" gibi bir formatta mı?
+    """
+    return code.isdigit() or (code.startswith("CAMP-") and code[5:].isdigit())
+
+# 📌 Kullanıcı Girişi İşleme
+def process_user_input(user_input):
+    if user_input:
+        with st.spinner("💭 Düşünüyorum..."):
+            # 🔍 Kampanya kodu var mı kontrol et
+            campaign_code = extract_campaign_code(user_input)
+
+            if campaign_code:
+                # 📌 Elasticsearch'ten kampanya bilgisi çek
+                campaign_info = es.search_campaign_by_code(campaign_code)
+
+                # 📌 OpenAI’ye soru gönder
+                response = ask_openai(user_input, campaign_info=campaign_info)
+
+                # 🔍 Hafızaya ekle
+                memory.save_context({"input": user_input, "response": response})
+
+                st.subheader("📌 Yanıt")
+                st.write(response)
+
+            else:
+                # 📌 Kampanya kodu yok, en alakalı 3 kampanyayı getir
+                search_result, formatted_result = es.search_campaign_by_header(user_input)
+
+                st.subheader("📌 En İyi 3 Kampanya")
+                st.write(formatted_result)
+
+                # 📌 Kullanıcının yeni sorusu önceki kampanyalarla mı ilgili?
+                follow_up_response = ask_openai(user_input, follow_up_info=formatted_result)
+
+                if is_valid_campaign_code(follow_up_response):
+                    st.write(f"🚀 Kullanıcının yeni sorusu `{follow_up_response}` kampanyasıyla ilgili.")
+
+                    # Kampanya kodu bulundu, Elasticsearch'ten bilgi çek ve OpenAI'ye gönder
+                    campaign_info = es.search_campaign_by_code(follow_up_response)
+                    response = ask_openai(user_input, campaign_info=campaign_info)
+                    st.subheader("📌 Yanıt")
+                    st.write(response)
+
+                elif follow_up_response != "Hiçbiri":
+                    # Kampanya adı bulundu, Elasticsearch'te başlığa göre arama yapılacak
+                    campaign_info = es.filter_campaign_by_title(follow_up_response)
+                    response = ask_openai(user_input, campaign_info=campaign_info)
+                    st.subheader(f"📌 {follow_up_response} Kampanyası İçeriği")
+                    st.write(response)
+
+                else:
+                    # 📌 Hiçbir kampanyayla alakalı değilse, OpenAI’ye genel soru olarak gönder
+                    response = ask_openai(user_input)
+                    st.subheader("📌 Yanıt")
+                    st.write(response)
+

@@ -1796,3 +1796,105 @@ def process_user_input(user_input):
                     st.subheader("📌 Yanıt")
                     st.write(response)
 
+
+
+
+
+
+
+
+
+import streamlit as st
+from langchain.chains.conversation.memory import ConversationBufferWindowMemory
+from langchain_community.chat_models import AzureChatOpenAI
+from langchain.callbacks.base import BaseCallbackHandler
+
+# 📌 Kampanya kodu kontrolü
+def is_valid_campaign_code(code):
+    """
+    Kampanya kodunun geçerli olup olmadığını kontrol eden fonksiyon.
+    - Tamamen sayısal mı?
+    - "CAMP-12345" gibi bir formatta mı?
+    """
+    return code.isdigit() or (code.startswith("CAMP-") and code[5:].isdigit())
+
+# 📌 Kullanıcının yeni sorusunun son mesaj ile ilgili olup olmadığını doğrulama
+def check_follow_up_relevance(user_input, last_message):
+    """
+    Kullanıcının yeni sorusunun sohbet geçmişindeki son mesajla ilgili olup olmadığını kontrol eder.
+    """
+    system_prompt = "Kullanıcının yeni mesajı önceki mesajla ilgili mi? Eğer ilgiliyse 'Evet' döndür, değilse 'Hayır' döndür."
+    user_prompt = f"Önceki Mesaj: {last_message}\nYeni Kullanıcı Sorusu: {user_input}"
+
+    model = AzureChatOpenAI(
+        openai_api_key=config_info.azure_api_key,
+        openai_api_version=config_info.azure_api_version,
+        azure_endpoint=config_info.azure_endpoint,
+        deployment_name="cyz",
+        model_name="xyz",
+        openai_api_type="azure"
+    )
+
+    response = model.predict(system_prompt + "\n" + user_prompt)
+    return response.strip().lower() == "evet"
+
+# 📌 Kullanıcı Girişi İşleme
+def process_user_input(user_input):
+    if user_input:
+        with st.spinner("💭 Düşünüyorum..."):
+            # 🔍 Kampanya kodu var mı kontrol et
+            campaign_code = extract_campaign_code(user_input)
+
+            # 📌 Sohbet geçmişinden son mesajı al
+            memory_variables = memory.load_memory_variables({})
+            chat_history = memory_variables.get('chat_history', [])
+            last_message = chat_history[-1] if chat_history else ""
+
+            # 📌 Yeni soru önceki mesaj ile ilgili mi?
+            if last_message and not check_follow_up_relevance(user_input, last_message):
+                st.warning("Lütfen sorunuzu başka türlü tekrar sorunuz.")
+                return
+
+            if campaign_code:
+                # 📌 Elasticsearch'ten kampanya bilgisi çek
+                campaign_info = es.search_campaign_by_code(campaign_code)
+
+                # 📌 OpenAI’ye soru gönder
+                response = ask_openai(user_input, campaign_info=campaign_info)
+
+                # 🔍 Hafızaya ekle
+                memory.save_context({"input": user_input, "response": response})
+
+                st.subheader("📌 Yanıt")
+                st.write(response)
+
+            else:
+                # 📌 Kampanya kodu yok, en alakalı 3 kampanyayı getir
+                search_result, formatted_result = es.search_campaign_by_header(user_input)
+
+                st.subheader("📌 En İyi 3 Kampanya")
+                st.write(formatted_result)
+
+                # 📌 Kullanıcının yeni sorusu önceki kampanyalarla mı ilgili?
+                follow_up_response = ask_openai(user_input, follow_up_info=formatted_result)
+
+                if is_valid_campaign_code(follow_up_response):
+                    st.write(f"🚀 Kullanıcının yeni sorusu `{follow_up_response}` kampanyasıyla ilgili.")
+
+                    # Kampanya kodu bulundu, Elasticsearch'ten bilgi çek ve OpenAI'ye gönder
+                    campaign_info = es.search_campaign_by_code(follow_up_response)
+                    response = ask_openai(user_input, campaign_info=campaign_info)
+                    st.subheader("📌 Yanıt")
+                    st.write(response)
+
+                elif follow_up_response != "Hiçbiri":
+                    # Kampanya adı bulundu, Elasticsearch'te başlığa göre arama yapılacak
+                    campaign_info = es.filter_campaign_by_title(follow_up_response)
+                    response = ask_openai(user_input, campaign_info=campaign_info)
+                    st.subheader(f"📌 {follow_up_response} Kampanyası İçeriği")
+                    st.write(response)
+
+                else:
+                    # 📌 Kullanıcının sorusu önceki mesajla ilgili değilse, uyarı ver
+                    st.warning("Lütfen sorunuzu başka türlü tekrar sorunuz.")
+

@@ -1,3 +1,94 @@
+import streamlit as st
+from langchain_community.chat_models import AzureChatOpenAI
+from collections import deque
+
+# 📌 Streamlit session state ile chat memory ve top N kampanyaları saklama
+if "chat_memory" not in st.session_state:
+    st.session_state.chat_memory = deque(maxlen=3)  # En fazla 3 mesaj saklanır
+
+if "top_n_campaigns" not in st.session_state:
+    st.session_state.top_n_campaigns = []  # En iyi kampanyaları saklamak için
+
+# 📌 Mesaj Ekleme Fonksiyonu (En fazla 3 mesaj tutar)
+def add_message(user_input, response):
+    """Sohbet geçmişine yeni mesaj ekler."""
+    st.session_state.chat_memory.appendleft({"user": user_input, "bot": response})  # Yeni mesaj en üste eklenir
+
+# 📌 History'yi Ekrana Formatlı Yazdırma
+def get_formatted_history():
+    """Sohbet geçmişini zaman sırasına göre formatlı döndürür."""
+    if not st.session_state.chat_memory:
+        return "Sohbet geçmişi henüz boş."
+    return "\n\n".join([f"🗣 Kullanıcı: {msg['user']}\n🤖 Bot: {msg['bot']}" for msg in st.session_state.chat_memory])
+
+# 📌 OpenAI'ye Kampanya Bilgisiyle Soru Gönderme
+def ask_openai(user_input, campaign_info=None, history_analysis=None):
+    """OpenAI'ye özel sistem prompt'ları ile soru gönderir."""
+    if campaign_info:
+        system_prompt = f"Kampanya bilgisi verilmiştir. Bu bilgiye göre soruyu yanıtla:\n\nKampanya Açıklaması: {campaign_info}"
+        user_prompt = f"Kullanıcı Sorusu: {user_input}\nYanıtı kısa ve net bir şekilde ver."
+    elif history_analysis:
+        system_prompt = "Kullanıcının yeni mesajı, önceki konuşmalardaki bir bilgiye referans veriyor mu? Eğer veriyorsa, ilgili bilgiyi döndür, eğer tamamen yeni bir şey soruyorsa 'Yeni Konu' döndür."
+        user_prompt = f"Önceki Mesajlar:\n{history_analysis}\nKullanıcının Yeni Sorusu: {user_input}"
+
+    else:
+        system_prompt = "Kullanıcı bir kampanya hakkında soru sormuş olabilir. Eğer kampanya kodu veya başlık belirttiyse, ona göre yanıt ver."
+        user_prompt = f"Kullanıcı Sorusu: {user_input}\nYanıtı kısa ve net bir şekilde ver."
+
+    model = AzureChatOpenAI(
+        openai_api_key=config_info.azure_api_key,
+        openai_api_version=config_info.azure_api_version,
+        azure_endpoint=config_info.azure_endpoint,
+        deployment_name="cyz",
+        model_name="xyz",
+        openai_api_type="azure"
+    )
+
+    response = model.predict(system_prompt + "\n" + user_prompt)
+    return response.strip()
+
+# 📌 Kullanıcı Girişi İşleme
+def process_user_input(user_input):
+    if user_input:
+        with st.spinner("💭 Düşünüyorum..."):
+
+            # 📌 Kampanya kodu var mı?
+            campaign_code = extract_campaign_code(user_input)
+
+            if len(st.session_state.chat_memory) == 0:
+                if campaign_code:
+                    campaign_info = es.search_campaign_by_code(campaign_code)
+                    response = ask_openai(user_input, campaign_info=campaign_info)
+                    add_message(user_input, response)
+                    st.subheader("📌 Yanıt")
+                    st.write(response)
+                else:
+                    search_result, formatted_result = es.search_campaign_by_header(user_input)
+                    st.session_state.top_n_campaigns = search_result  # Kampanyaları sakla
+                    st.subheader("📌 En İyi 3 Kampanya")
+                    st.write(formatted_result)
+            else:
+                formatted_history = get_formatted_history()
+                follow_up_response = ask_openai(user_input, history_analysis=formatted_history)
+
+                if follow_up_response.lower() != "yeni konu":
+                    # Eğer kullanıcı önceki mesajlardan birine referans verdiyse o bilgiyi getir
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 import streamlit as st
 import logging

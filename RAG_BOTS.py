@@ -1,3 +1,134 @@
+
+import streamlit as st
+from langchain_community.chat_models import AzureChatOpenAI
+from collections import deque
+
+# 📌 Streamlit session state ile chat memory saklama
+if "chat_memory" not in st.session_state:
+    st.session_state.chat_memory = deque(maxlen=3)  # En fazla 3 mesaj saklanır
+
+# 📌 OpenAI istemcisini başlatma
+def initialize_openai_client():
+    return AzureChatOpenAI(
+        openai_api_key=config_info.azure_api_key,
+        openai_api_version=config_info.azure_api_version,
+        azure_endpoint=config_info.azure_endpoint,
+        deployment_name="xyz",
+        model_name="xyz",
+        openai_api_type="azure"
+    )
+
+# 📌 Kullanıcının genel mi yoksa spesifik bir kampanya hakkında mı konuştuğunu belirleme
+def detect_query_type(user_input):
+    """OpenAI kullanarak kullanıcının genel bir arama mı yoksa spesifik bir kampanya sorgusu mu yaptığını belirler."""
+    
+    system_prompt = """Kullanıcının mesajını analiz et:
+    - Eğer genel bir kampanya arıyorsa 'GENEL ARAMA' döndür. (Örneğin: "Boyner kampanyaları", "İndirimli kampanyalar")
+    - Eğer belirli bir kampanya hakkında doğrudan bir soru soruyorsa, kampanya başlığını döndür. (Örneğin: "Yılbaşı restoran kampanyasının bitiş tarihi nedir" → "Yılbaşı Restoran Kampanyası")"""
+
+    client = initialize_openai_client()
+    response = client.predict(f"{system_prompt}\n\nKullanıcı Mesajı: {user_input}")
+    
+    return response.strip()
+
+# 📌 Mesaj Ekleme Fonksiyonu
+def add_message(user_input, response):
+    """Sohbet geçmişine yeni mesaj ekler."""
+    st.session_state.chat_memory.appendleft({"user": user_input, "bot": response})
+
+# 📌 History'yi Ekrana Formatlı Yazdırma
+def get_formatted_history():
+    """Sohbet geçmişini zaman sırasına göre formatlı döndürür."""
+    if not st.session_state.chat_memory:
+        return "Sohbet geçmişi henüz boş."
+    return "\n\n".join([f"🗣 Kullanıcı: {msg['user']}\n🤖 Bot: {msg['bot']}" for msg in st.session_state.chat_memory])
+
+# 📌 OpenAI'ye Kampanya Bilgisiyle Soru Gönderme
+def ask_openai(user_input, campaign_info=None):
+    """OpenAI'ye özel sistem prompt'ları ile soru gönderir."""
+    if campaign_info:
+        system_prompt = f"Kampanya bilgisi verilmiştir. Bu bilgiye göre soruyu yanıtla:\n\nKampanya Açıklaması: {campaign_info}"
+        user_prompt = f"Kullanıcı Sorusu: {user_input}\nYanıtı kısa ve net bir şekilde ver."
+    else:
+        system_prompt = "Kullanıcı bir kampanya hakkında soru sormuş olabilir. Eğer kampanya kodu veya başlık belirttiyse, ona göre yanıt ver."
+        user_prompt = f"Kullanıcı Sorusu: {user_input}\nYanıtı kısa ve net bir şekilde ver."
+
+    model = initialize_openai_client()
+    response = model.predict("\n".join([system_prompt, user_prompt]))
+    return response.strip()
+
+# 📌 Kullanıcı Girişi İşleme
+def process_user_input(user_input):
+    """Her yeni kullanıcı mesajında sıfırdan başlar ve tüm akışı yönetir."""
+    if user_input:
+        with st.spinner("💭 Düşünüyorum..."):
+
+            # 📌 Kampanya kodu var mı?
+            campaign_code = extract_campaign_code(user_input)
+
+            if len(st.session_state.chat_memory) == 0:
+                if campaign_code:
+                    campaign_info = es.get_best_related(campaign_code)
+                    response = ask_openai(user_input, campaign_info=campaign_info)
+                    add_message(user_input, response)
+                    st.subheader(f"📌 {campaign_code} Kampanyası Yanıt İçeriği")
+                    st.write(response)
+
+                else:
+                    # 📌 Kullanıcının sorgu tipini analiz et
+                    query_type = detect_query_type(user_input)
+
+                    if query_type == "GENEL ARAMA":
+                        search_result, formatted_result = es.search_campaign_by_header(user_input)
+                        add_message(user_input, formatted_result)  # **🔹 Artık history’ye ekleniyor**
+                        st.subheader("📌 En İyi 3 Kampanya")
+                        st.write(formatted_result)
+                    
+                    else:
+                        # Kullanıcı belirli bir kampanya hakkında doğrudan soru sorduysa
+                        campaign_info = es.filter_campaign_by_title(query_type)
+                        response = ask_openai(user_input, campaign_info=campaign_info)
+                        add_message(user_input, response)
+                        st.subheader(f"📌 {query_type} Kampanyası İçeriği")
+                        st.write(response)
+
+        st.subheader("💬 Sohbet Geçmişi (Son 3 Mesaj)")
+        st.write(get_formatted_history())
+
+        if len(st.session_state.chat_memory) == 3:
+            st.session_state.chat_memory.clear()
+            st.warning("📌 Sohbet geçmişi dolduğu için sıfırlandı.")
+
+# 📌 Streamlit Arayüzü
+if __name__ == "__main__":
+    st.title("📢 Kampanya Asistanı")
+    st.markdown("---")
+
+    user_input = st.text_input("Lütfen kampanya ile ilgili sorunuzu girin:")
+
+    if user_input:
+        process_user_input(user_input)
+
+    st.subheader("💬 Sohbet Geçmişi (Son 3 Mesaj)")
+    st.write(get_formatted_history())
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 import streamlit as st
 from langchain_community.chat_models import AzureChatOpenAI
 from collections import deque

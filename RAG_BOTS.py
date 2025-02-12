@@ -1898,3 +1898,135 @@ def process_user_input(user_input):
                     # 📌 Kullanıcının sorusu önceki mesajla ilgili değilse, uyarı ver
                     st.warning("Lütfen sorunuzu başka türlü tekrar sorunuz.")
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+import streamlit as st
+from langchain_community.chat_models import AzureChatOpenAI
+from collections import deque
+
+# 📌 Gelişmiş Memory Yönetimi (Son 3 mesaj formatlı saklanacak)
+class ConversationMemory:
+    def __init__(self, max_size=3):
+        self.history = deque(maxlen=max_size)
+
+    def add_message(self, user_input, response):
+        """Sohbet geçmişine mesaj ekler"""
+        self.history.append({"user": user_input, "bot": response})
+
+    def get_formatted_history(self):
+        """Geçmiş mesajları formatlı şekilde döndürür"""
+        return "\n".join([f"Kullanıcı: {msg['user']}\nBot: {msg['bot']}" for msg in self.history])
+
+memory = ConversationMemory()
+
+# 📌 OpenAI’ye Kampanya Bilgisiyle Soru Gönderme
+def ask_openai(user_input, campaign_info=None, follow_up_info=None):
+    """
+    OpenAI'ye özel sistem prompt'ları ile soru gönderir.
+    """
+    if campaign_info:
+        system_prompt = f"Kampanya hakkında bilgi verilmiştir. Bu bilgi doğrultusunda soruyu yanıtla:\n\nKampanya Bilgisi: {campaign_info}"
+        user_prompt = f"Kullanıcı Sorusu: {user_input}\nYanıtı kısa ve net bir şekilde ver."
+    elif follow_up_info:
+        system_prompt = "Kullanıcının önceki kampanyalarla ilgili mi yoksa tamamen yeni bir konuda mı konuştuğunu belirle."
+        user_prompt = f"Önceki Kampanyalar: {follow_up_info}\nKullanıcının yeni sorusu: {user_input}\nEğer ilgiliyse ilgili kampanya kodunu veya başlığını döndür. Eğer hiçbiri ile ilgili değilse 'Hiçbiri' yaz. Eğer ilgili değil ama yeni bir kampanya belirtiyorsa, yeni kampanya adını döndür."
+    else:
+        system_prompt = "Kullanıcı kampanya hakkında soru sormuş olabilir, ancak kesin bir bilgi yok. Soruyu anlamaya çalış ve eğer gerekirse kampanya bilgisi sor."
+        user_prompt = f"Kullanıcı Sorusu: {user_input}\nYanıtı kısa ve net bir şekilde ver."
+
+    model = AzureChatOpenAI(
+        openai_api_key=config_info.azure_api_key,
+        openai_api_version=config_info.azure_api_version,
+        azure_endpoint=config_info.azure_endpoint,
+        deployment_name="cyz",
+        model_name="xyz",
+        openai_api_type="azure"
+    )
+
+    response = model.predict(system_prompt + "\n" + user_prompt)
+    return response.strip()
+
+# 📌 Kullanıcı Girişi İşleme
+def process_user_input(user_input):
+    if user_input:
+        with st.spinner("💭 Düşünüyorum..."):
+            # 🔍 Kampanya kodu var mı kontrol et
+            campaign_code = extract_campaign_code(user_input)
+
+            # 📌 Sohbet geçmişini al
+            formatted_history = memory.get_formatted_history()
+
+            if campaign_code:
+                # 📌 Elasticsearch'ten kampanya bilgisi çek
+                campaign_info = es.search_campaign_by_code(campaign_code)
+
+                # 📌 OpenAI’ye soru gönder
+                response = ask_openai(user_input, campaign_info=campaign_info)
+
+                # 🔍 Hafızaya ekle
+                memory.add_message(user_input, response)
+
+                st.subheader("📌 Yanıt")
+                st.write(response)
+
+            else:
+                # 📌 Kampanya kodu yok, en alakalı 3 kampanyayı getir
+                search_result, formatted_result = es.search_campaign_by_header(user_input)
+
+                st.subheader("📌 En İyi 3 Kampanya")
+                st.write(formatted_result)
+
+                # 📌 Kullanıcının yeni sorusu önceki kampanyalarla mı ilgili?
+                follow_up_response = ask_openai(user_input, follow_up_info=formatted_history)
+
+                if follow_up_response.lower() == "hiçbiri":
+                    st.warning("Lütfen sorunuzu başka türlü tekrar sorunuz.")
+                    return
+
+                elif follow_up_response.lower().startswith("kampanya kodu:"):
+                    campaign_code = follow_up_response.split(":")[1].strip()
+                    campaign_info = es.search_campaign_by_code(campaign_code)
+                    response = ask_openai(user_input, campaign_info=campaign_info)
+                    memory.add_message(user_input, response)
+                    st.subheader("📌 Yanıt")
+                    st.write(response)
+
+                elif follow_up_response.lower().startswith("kampanya adı:"):
+                    campaign_title = follow_up_response.split(":")[1].strip()
+                    campaign_info = es.filter_campaign_by_title(campaign_title)
+                    response = ask_openai(user_input, campaign_info=campaign_info)
+                    memory.add_message(user_input, response)
+                    st.subheader(f"📌 {campaign_title} Kampanyası İçeriği")
+                    st.write(response)
+
+                else:
+                    st.warning(f"Yeni kampanya belirttiniz: {follow_up_response}. Akış yeniden başlatılıyor...")
+                    process_user_input(f"Yeni kampanya arıyorum: {follow_up_response}")
+
+# 📌 Streamlit Arayüzü
+if __name__ == "__main__":
+    st.title("📢 Kampanya Asistanı")
+    st.markdown("---")
+
+    user_input = st.text_input("Lütfen kampanya ile ilgili sorunuzu girin:")
+
+    # Kullanıcı girişini işleme fonksiyonunu çağır
+    if user_input:
+        process_user_input(user_input)
+
+    # 📌 Sohbet Geçmişi
+    st.subheader("💬 Sohbet Geçmişi")
+    st.write(memory.get_formatted_history())
+

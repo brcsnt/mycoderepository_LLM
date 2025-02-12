@@ -73,6 +73,43 @@ def process_user_input(user_input):
 
                 if follow_up_response.lower() != "yeni konu":
                     # Eğer kullanıcı önceki mesajlardan birine referans verdiyse o bilgiyi getir
+                    campaign_info = es.search_campaign_by_code(follow_up_response)
+                    response = ask_openai(user_input, campaign_info=campaign_info)
+                    add_message(user_input, response)
+                    st.subheader("📌 Yanıt")
+                    st.write(response)
+
+                else:
+                    # Eğer tamamen yeni bir konuysa, hafızayı temizlemeden yeni arama yap
+                    search_result, formatted_result = es.search_campaign_by_header(user_input)
+                    st.session_state.top_n_campaigns = search_result  # Yeni kampanyaları sakla
+                    st.subheader("📌 En İyi 3 Kampanya")
+                    st.write(formatted_result)
+
+        # 📌 Sohbet Geçmişini Güncelle ve Ekrana Yazdır
+        st.subheader("💬 Sohbet Geçmişi (Son 3 Mesaj)")
+        st.write(get_formatted_history())
+
+        # 📌 Eğer 3 mesaj olduysa sıfırla
+        if len(st.session_state.chat_memory) == 3:
+            st.session_state.chat_memory.clear()
+            st.warning("📌 Sohbet geçmişi dolduğu için sıfırlandı.")
+
+# 📌 Streamlit Arayüzü
+if __name__ == "__main__":
+    st.title("📢 Kampanya Asistanı")
+    st.markdown("---")
+
+    user_input = st.text_input("Lütfen kampanya ile ilgili sorunuzu girin:")
+
+    if user_input:
+        process_user_input(user_input)
+
+    # 📌 Sohbet Geçmişi Ekrana Yazdırılıyor
+    st.subheader("💬 Sohbet Geçmişi (Son 3 Mesaj)")
+    st.write(get_formatted_history())
+
+
 
 
 

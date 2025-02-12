@@ -2030,3 +2030,137 @@ if __name__ == "__main__":
     st.subheader("💬 Sohbet Geçmişi")
     st.write(memory.get_formatted_history())
 
+
+
+
+
+
+
+
+
+
+
+
+
+import streamlit as st
+from langchain_community.chat_models import AzureChatOpenAI
+from collections import deque
+
+# 📌 Hafıza (History) Yönetimi: Son 3 mesajı tutan yapı
+class ConversationMemory:
+    def __init__(self, max_size=3):
+        self.history = deque(maxlen=max_size)  # En fazla 3 mesaj tutulur
+
+    def add_message(self, user_input, response):
+        """Sohbet geçmişine mesaj ekler (Yeni mesaj en üste gelir)."""
+        self.history.appendleft({"user": user_input, "bot": response})  # Yeni mesaj en başa eklenir
+
+    def get_formatted_history(self):
+        """Geçmiş mesajları zaman sırasına göre (sondan başa) formatlı şekilde döndürür."""
+        return "\n".join([f"Kullanıcı: {msg['user']}\nBot: {msg['bot']}" for msg in self.history])
+
+    def clear_memory(self):
+        """Hafızayı temizler (Yeni soru geldiğinde sıfırlamak için)."""
+        self.history.clear()
+
+memory = ConversationMemory()
+
+# 📌 OpenAI'ye Kampanya Bilgisiyle Soru Gönderme
+def ask_openai(user_input, campaign_info=None, history_analysis=None):
+    """
+    OpenAI'ye özel sistem prompt'ları ile soru gönderir.
+    - Kampanya bilgisi varsa ona göre cevaplar.
+    - Geçmiş mesajlardan analiz yapıyorsa ona göre yorum yapar.
+    """
+    if campaign_info:
+        system_prompt = f"Kampanya bilgisi verilmiştir. Bu bilgiye göre soruyu yanıtla:\n\nKampanya Açıklaması: {campaign_info}"
+        user_prompt = f"Kullanıcı Sorusu: {user_input}\nYanıtı kısa ve net bir şekilde ver."
+    elif history_analysis:
+        system_prompt = "Kullanıcının yeni mesajı, önceki konuşmalar ile ilgili mi? Kampanya kodu mu söyledi, başlık mı belirtti, yeni mi başladı? Eğer kampanya kodu verdiyse 'Kampanya Kodu: XXX', başlık verdiyse 'Kampanya Adı: XXX', hiçbirine uymuyorsa 'Hiçbiri', eğer tamamen farklı yeni bir konuysa 'Baştan Yeni' döndür."
+        user_prompt = f"Önceki Mesajlar:\n{history_analysis}\nKullanıcının Yeni Sorusu: {user_input}"
+
+    else:
+        system_prompt = "Kullanıcı bir kampanya hakkında soru sormuş olabilir. Eğer kampanya kodu veya başlık belirttiyse, ona göre yanıt ver."
+        user_prompt = f"Kullanıcı Sorusu: {user_input}\nYanıtı kısa ve net bir şekilde ver."
+
+    model = AzureChatOpenAI(
+        openai_api_key=config_info.azure_api_key,
+        openai_api_version=config_info.azure_api_version,
+        azure_endpoint=config_info.azure_endpoint,
+        deployment_name="cyz",
+        model_name="xyz",
+        openai_api_type="azure"
+    )
+
+    response = model.predict(system_prompt + "\n" + user_prompt)
+    return response.strip()
+
+# 📌 Kullanıcı Girişi İşleme
+def process_user_input(user_input):
+    if user_input:
+        with st.spinner("💭 Düşünüyorum..."):
+
+            # 📌 Kampanya kodu var mı?
+            campaign_code = extract_campaign_code(user_input)
+
+            # 📌 Eğer history boşsa (İlk mesaj)
+            if len(memory.history) == 0:
+                if campaign_code:
+                    # Kampanya kodu varsa, Elasticsearch'ten kampanya bilgisi çek
+                    campaign_info = es.search_campaign_by_code(campaign_code)
+                    response = ask_openai(user_input, campaign_info=campaign_info)
+                    memory.add_message(user_input, response)  # Hafızaya ekle
+                    st.subheader("📌 Yanıt")
+                    st.write(response)
+                else:
+                    # Kampanya kodu yoksa, Elasticsearch ile top 3 kampanya getir
+                    search_result, formatted_result = es.search_campaign_by_header(user_input)
+                    st.subheader("📌 En İyi 3 Kampanya")
+                    st.write(formatted_result)
+            else:
+                # 📌 History doluysa OpenAI’ye sorarak kullanıcının amacını analiz et
+                formatted_history = memory.get_formatted_history()
+                follow_up_response = ask_openai(user_input, history_analysis=formatted_history)
+
+                # 🔍 1. Kullanıcı direkt kampanya kodu söyledi mi?
+                if follow_up_response.lower().startswith("kampanya kodu:"):
+                    campaign_code = follow_up_response.split(":")[1].strip()
+                    campaign_info = es.search_campaign_by_code(campaign_code)
+                    response = ask_openai(user_input, campaign_info=campaign_info)
+                    memory.add_message(user_input, response)  # Hafızaya ekle
+                    st.subheader("📌 Yanıt")
+                    st.write(response)
+
+                # 🔍 2. Kullanıcı kampanya adını mı belirtti?
+                elif follow_up_response.lower().startswith("kampanya adı:"):
+                    campaign_title = follow_up_response.split(":")[1].strip()
+                    campaign_info = es.filter_campaign_by_title(campaign_title)
+                    response = ask_openai(user_input, campaign_info=campaign_info)
+                    memory.add_message(user_input, response)  # Hafızaya ekle
+                    st.subheader(f"📌 {campaign_title} Kampanyası İçeriği")
+                    st.write(response)
+
+                # 🔍 3. Kullanıcının sorusu hiçbirine uymadıysa
+                elif follow_up_response.lower() == "hiçbiri":
+                    st.warning("Soruyu başka türlü sorarsanız yardımcı olabilirim.")
+
+                # 🔍 4. Kullanıcı baştan yeni bir konu açtıysa, hafızayı sıfırla
+                elif follow_up_response.lower() == "baştan yeni":
+                    memory.clear_memory()
+                    st.warning("Yeni bir konu başlattınız, önceki konuşmalar sıfırlandı.")
+                    process_user_input(user_input)  # Süreci baştan başlat
+
+# 📌 Streamlit Arayüzü
+if __name__ == "__main__":
+    st.title("📢 Kampanya Asistanı")
+    st.markdown("---")
+
+    user_input = st.text_input("Lütfen kampanya ile ilgili sorunuzu girin:")
+
+    if user_input:
+        process_user_input(user_input)
+
+    # 📌 Sohbet Geçmişi
+    st.subheader("💬 Sohbet Geçmişi")
+    st.write(memory.get_formatted_history())
+

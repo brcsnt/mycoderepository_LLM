@@ -2567,3 +2567,368 @@ if __name__ == "__main__":
     st.subheader("💬 Sohbet Geçmişi")
     st.write(memory.get_formatted_history())
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    import os
+import json
+import logging
+import re
+import time
+import requests
+from typing import TypedDict, Optional, Literal, List, Dict
+from elasticsearch import Elasticsearch
+from elasticsearch.helpers import bulk
+
+# Configuration
+AZURE_OPENAI_KEY = os.getenv("AZURE_OPENAI_API_KEY", "your-openai-key")
+AZURE_OPENAI_ENDPOINT = os.getenv("AZURE_OPENAI_ENDPOINT", "https://your-openai-endpoint.openai.azure.com")
+ES_HOST = os.getenv("ES_HOST", "http://localhost:9200")
+ES_INDEX = "banking_campaigns"
+EMBEDDING_DEPLOYMENT = "text-embedding-ada-002"
+DEPLOYMENT_NAME_INTENT = "gpt-4-intent"
+DEPLOYMENT_NAME_RESPONSE = "gpt-4-response"
+API_VERSION = "2023-07-01-preview"
+EMBEDDING_DIM = 1536  # For text-embedding-ada-002
+
+# Initialize clients
+es = Elasticsearch(ES_HOST)
+logging.basicConfig(level=logging.INFO)
+
+class ChatbotState(TypedDict):
+    user_input: str
+    intent: Optional[Literal["retrieval", "follow_up", "general"]]
+    conversation_history: List[dict]
+    retrieved_info: Optional[dict]
+    candidate_campaigns: Optional[List[Dict]]
+    current_response: Optional[str]
+    last_campaign_mentioned: Optional[str]
+
+def create_es_index():
+    """Create Elasticsearch index with hybrid search configuration"""
+    body = {
+        "settings": {
+            "number_of_shards": 1,
+            "number_of_replicas": 1,
+            "index": {
+                "similarity": {
+                    "bm25_similarity": {
+                        "type": "BM25"
+                    }
+                }
+            }
+        },
+        "mappings": {
+            "properties": {
+                "name": {"type": "text"},
+                "details": {
+                    "type": "text",
+                    "fields": {
+                        "embedding": {
+                            "type": "dense_vector",
+                            "dims": EMBEDDING_DIM,
+                            "index": True,
+                            "similarity": "cosine"
+                        }
+                    }
+                },
+                "keywords": {"type": "keyword"},
+                "eligibility": {"type": "text"},
+                "valid_until": {"type": "date"}
+            }
+        }
+    }
+    
+    if not es.indices.exists(index=ES_INDEX):
+        es.indices.create(index=ES_INDEX, body=body)
+        logging.info("Created Elasticsearch index")
+
+def index_campaigns():
+    """Index sample banking campaigns with embeddings"""
+    campaigns = [
+        {
+            "name": "Summer Savings Campaign",
+            "details": "Earn a 5% bonus interest rate on deposits from June to August.",
+            "keywords": ["summer", "savings", "bonus"],
+            "eligibility": "Minimum deposit of $1,000 required",
+            "valid_until": "2024-08-31"
+        },
+        {
+            "name": "Home Loan Special",
+            "details": "Fixed-rate mortgages starting at 3.99% APR with low down payments.",
+            "keywords": ["mortgage", "home", "loan"],
+            "eligibility": "700+ credit score required",
+            "valid_until": "2024-12-31"
+        }
+    ]
+    
+    # Generate and add embeddings
+    for campaign in campaigns:
+        campaign["details.embedding"] = get_embedding(campaign["details"])
+    
+    # Bulk index documents
+    actions = [
+        {
+            "_op_type": "index",
+            "_index": ES_INDEX,
+            "_source": campaign
+        }
+        for campaign in campaigns
+    ]
+    
+    bulk(es, actions)
+    logging.info(f"Indexed {len(campaigns)} campaigns")
+
+def get_embedding(text: str) -> List[float]:
+    """Get text embedding using Azure OpenAI"""
+    url = f"{AZURE_OPENAI_ENDPOINT}/openai/deployments/{EMBEDDING_DEPLOYMENT}/embeddings?api-version={API_VERSION}"
+    headers = {"Content-Type": "application/json", "api-key": AZURE_OPENAI_KEY}
+    body = {"input": text}
+    
+    try:
+        response = requests.post(url, headers=headers, json=body)
+        response.raise_for_status()
+        return response.json()["data"][0]["embedding"]
+    except Exception as e:
+        logging.error(f"Embedding generation failed: {e}")
+        return []
+
+def hybrid_search(query: str) -> List[Dict]:
+    """Perform hybrid search combining BM25 and vector search"""
+    query_embedding = get_embedding(query)
+    
+    search_body = {
+        "query": {
+            "bool": {
+                "should": [
+                    {
+                        "match": {
+                            "details": {
+                                "query": query,
+                                "boost": 0.5
+                            }
+                        }
+                    },
+                    {
+                        "knn": {
+                            "details.embedding": {
+                                "vector": query_embedding,
+                                "k": 10,
+                                "num_candidates": 100,
+                                "boost": 0.5
+                            }
+                        }
+                    }
+                ]
+            }
+        },
+        "size": 3,
+        "_source": ["name", "details", "eligibility", "valid_until"]
+    }
+    
+    try:
+        result = es.search(index=ES_INDEX, body=search_body)
+        return [hit["_source"] for hit in result["hits"]["hits"]]
+    except Exception as e:
+        logging.error(f"Elasticsearch search failed: {e}")
+        return []
+
+def retrieve_campaign_candidates(query: str) -> List[Dict]:
+    """Retrieve a list of candidate campaigns using hybrid search"""
+    return hybrid_search(query)
+
+def truncate_history(history: List[dict], max_tokens: int = 1000) -> List[dict]:
+    """Truncate conversation history based on token count"""
+    token_count = 0
+    truncated = []
+    for msg in reversed(history):
+        tokens = len(msg["content"].split()) + 5
+        if token_count + tokens > max_tokens:
+            break
+        token_count += tokens
+        truncated.insert(0, msg)
+    return truncated
+
+def call_openai(deployment: str, messages: list, temperature: float = 0.3) -> str:
+    """Call Azure OpenAI API"""
+    url = f"{AZURE_OPENAI_ENDPOINT}/openai/deployments/{deployment}/chat/completions?api-version={API_VERSION}"
+    headers = {"Content-Type": "application/json", "api-key": AZURE_OPENAI_KEY}
+    body = {"messages": messages, "temperature": temperature, "max_tokens": 500}
+    
+    try:
+        response = requests.post(url, headers=headers, json=body)
+        response.raise_for_status()
+        return response.json()["choices"][0]["message"]["content"]
+    except Exception as e:
+        logging.error(f"API call failed: {e}")
+        return "I'm having trouble processing your request. Please try again."
+
+def classify_intent(state: ChatbotState) -> ChatbotState:
+    """Classify banking intent with LLM"""
+    history_str = "\n".join([f"{msg['role']}: {msg['content']}" for msg in truncate_history(state["conversation_history"])])
+    
+    system_prompt = """Classify banking intent. Respond in JSON with 'intent' and 'reason'."""
+    messages = [
+        {"role": "system", "content": system_prompt},
+        {"role": "user", "content": f"History:\n{history_str}\n\nQuery: {state['user_input']}"}
+    ]
+    
+    response = call_openai(DEPLOYMENT_NAME_INTENT, messages)
+    try:
+        result = json.loads(re.search(r'\{.*\}', response, re.DOTALL).group())
+        state["intent"] = result.get("intent", "general").lower()
+    except:
+        state["intent"] = "general"
+    
+    return state
+
+def generate_response(state: ChatbotState) -> ChatbotState:
+    """Generate response using LLM with Elasticsearch context"""
+    context = []
+    if state["intent"] == "retrieval":
+        # Use the selected campaign if available.
+        if state.get("retrieved_info"):
+            campaign = state["retrieved_info"]
+            context.append(
+                f"Campaign: {campaign['name']}\n"
+                f"Details: {campaign['details']}\n"
+                f"Eligibility: {campaign['eligibility']}\n"
+                f"Valid Until: {campaign.get('valid_until', 'N/A')}"
+            )
+            state["last_campaign_mentioned"] = campaign["name"]
+        else:
+            context.append("No matching campaigns found. Offer general banking help.")
+    
+    history_str = "\n".join([f"{msg['role']}: {msg['content']}" for msg in truncate_history(state["conversation_history"])[-3:]])
+    
+    system_prompt = f"""Banking assistant. Use context:
+{'\n'.join(context)}
+
+History:
+{history_str}"""
+    messages = [
+        {"role": "system", "content": system_prompt},
+        {"role": "user", "content": state["user_input"]}
+    ]
+    
+    response = call_openai(DEPLOYMENT_NAME_RESPONSE, messages, temperature=0.5)
+    state["current_response"] = re.sub(r'\s+', ' ', response).strip()
+    state["conversation_history"].append({"role": "assistant", "content": state["current_response"]})
+    return state
+
+def handle_campaign_selection(state: ChatbotState) -> bool:
+    """
+    Check if the current user input is a campaign selection.
+    If so, update state["retrieved_info"] with the chosen campaign and clear candidate_campaigns.
+    Returns True if a selection was made.
+    """
+    selection = state["user_input"].strip().lower()
+    candidates = state.get("candidate_campaigns", [])
+    chosen_campaign = None
+
+    # Try to interpret input as a number (ordinal selection)
+    if selection.isdigit():
+        index = int(selection) - 1
+        if 0 <= index < len(candidates):
+            chosen_campaign = candidates[index]
+    else:
+        # Otherwise try matching campaign name or id.
+        for candidate in candidates:
+            candidate_name = candidate.get("name", "").lower()
+            candidate_id = str(candidate.get("id", "")).lower()  # if an id field exists
+            if candidate_name in selection or candidate_id in selection:
+                chosen_campaign = candidate
+                break
+
+    if chosen_campaign:
+        state["retrieved_info"] = chosen_campaign
+        state["candidate_campaigns"] = None
+        return True
+    else:
+        print("I couldn't understand your selection. Please try again by specifying a number or campaign name/ID.")
+        return False
+
+def main():
+    """Main chat loop"""
+    create_es_index()
+    index_campaigns()
+    
+    state: ChatbotState = {
+        "user_input": "",
+        "intent": None,
+        "conversation_history": [],
+        "retrieved_info": None,
+        "candidate_campaigns": None,
+        "current_response": None,
+        "last_campaign_mentioned": None
+    }
+    
+    print("\n🏦 Welcome to BankAI! Ask about our campaigns or banking services.")
+    print("Type 'exit' to end the chat.\n")
+    
+    while True:
+        try:
+            user_input = input("You: ").strip()
+        except (EOFError, KeyboardInterrupt):
+            print("\n👋 Goodbye!")
+            break
+
+        if user_input.lower() in ('exit', 'quit'):
+            print("\n💼 Thank you for using BankAI!")
+            break
+
+        state["user_input"] = user_input
+        state["conversation_history"].append({"role": "user", "content": user_input})
+        
+        # If we are in selection mode, handle campaign selection
+        if state.get("candidate_campaigns"):
+            if not handle_campaign_selection(state):
+                # Selection not made, wait for correct input.
+                continue
+            # Once a valid selection is made, inform the user.
+            print(f"Selected campaign: {state['retrieved_info']['name']}")
+        
+        # Classify intent if not already in selection mode.
+        state = classify_intent(state)
+        
+        if state["intent"] == "retrieval" and not state.get("retrieved_info"):
+            # Retrieve candidate campaigns using hybrid search.
+            candidates = retrieve_campaign_candidates(user_input)
+            if len(candidates) == 0:
+                state["retrieved_info"] = None
+            elif len(candidates) == 1:
+                state["retrieved_info"] = candidates[0]
+            else:
+                # More than one candidate found; store them for selection.
+                state["candidate_campaigns"] = candidates
+                print("I found multiple matching campaigns:")
+                for i, campaign in enumerate(candidates):
+                    campaign_id = campaign.get("id", "N/A")
+                    print(f"{i+1}. {campaign.get('name')} (ID: {campaign_id})")
+                print("Please select one by typing the corresponding number, campaign name, or campaign ID.")
+                continue  # Wait for user selection in next loop iteration
+        
+        print("💭...", end="", flush=True)
+        start_time = time.time()
+        state = generate_response(state)
+        elapsed_time = time.time() - start_time
+        
+        print(f"\r{' '*20}\r", end="")
+        print(f"BankAI: {state['current_response']} (Response time: {elapsed_time:.2f}s)\n")
+
+if __name__ == "__main__":
+    main()
+

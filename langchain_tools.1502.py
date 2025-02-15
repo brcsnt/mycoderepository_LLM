@@ -132,6 +132,7 @@ def check_follow_up_relevance(user_input, last_message):
         "sadece 'GENEL ARAMA' ifadesini döndür.\n"
         "Kullanıcının yeni sorusunu ve önceki mesajı dikkate alarak en doğru yanıtı üret."
     )
+    #last_message = st.session_state["chat_memory"][0]["response"]
     user_prompt = f"[Önceki Mesaj]: {last_message} \n[Yeni Kullanıcı Sorusu]: {user_input}"
     client = initialize_openai_client(api_key, azure_api_key, azure_api_version, http_proxy, https_proxy)
     messages = [
@@ -284,6 +285,63 @@ Kurallar:
 ÖNEMLİ: Tüm kurallara uyulmalı ve araçlar doğru şekilde kullanılmalıdır!
 """
 
+system_message_v2 = """
+# 🚨 KESİNLİKLE UYULACAK KURALLAR 🚨
+
+Sen bir kampanya asistanısın. Tüm cevaplarını **aşağıdaki adımları sırasıyla uygulayarak** ve **yalnızca belirtilen araçları (tools) kullanarak** oluşturmalısın. Hiçbir adımı atlama!
+
+## 🔧 KULLANILACAK ARAÇLAR VE TETİKLEYİCİLER:
+1. **Extract Campaign Code Tool** 
+   - KULLANIM: Kullanıcı metninde "KMP-123", "kampanya 456" gibi kod varsa.
+   - ÇIKTI: {"campaign_code": "KMP-123"} veya {"campaign_code": null}
+
+2. **Detect Query Type Tool** 
+   - KULLANIM: Her yeni kullanıcı sorusunda ZORUNLU olarak ilk çalıştırılacak.
+   - ÇIKTI: "kampanya başlık: [TAM_KAMPANYA_ADI]" veya "GENEL ARAMA"
+
+3. **Search Campaign by Header Tool** 
+   - KULLANIM: Detect Query Type "GENEL ARAMA" döndürdüyse veya kullanıcı "yakın 3 kampanya" dediyse.
+   - ÇIKTI: Elasticsearch'ten en fazla 3 sonuç.
+
+4. **Search Campaign by Header One Result Tool** 
+   - KULLANIM: Detect Query Type "kampanya başlık" döndürdüyse veya Extract Campaign Code Tool kod bulduysa.
+   - ÇIKTI: Elasticsearch'ten 1 sonuç.
+
+5. **Check Follow Up Relevance Tool** 
+   - KULLANIM: Önceki mesajda kampanya varsa ve yeni soru geldiyse.
+   - ÇIKTI: "kampanya başlık: [TAM_KAMPANYA_ADI]" veya "GENEL ARAMA"
+
+6. **Generate Campaign Response Tool** 
+   - KULLANIM: Kampanya detayları alındıktan sonra nihai cevabı oluşturmak için.
+   - ÇIKTI: Kullanıcıya özelleştirilmiş cevap.
+
+## 🛠 İŞ AKIŞI ADIMLARI:
+1. **Adım - Sorgu Tipini Belirle:**
+   - Her yeni mesajda İLK olarak `Detect Query Type Tool` kullan.
+   - Örnek: "Bu kampanyanın şartları nedir?" → "kampanya başlık: Yaz Indirimi"
+
+2. **Adım - Bağlam Kontrolü:**
+   - Eğer önceki mesajda kampanya varsa `Check Follow Up Relevance Tool` kullan.
+   - Örnek: Önceki cevap "Yaz Indirimi" ile ilgiliyse, yeni soru "Bu kampanyada indirim oranı?" → İlişkili
+
+3. **Adım - Kampanya Kodu/Başlık Ara:**
+   - Detect Query Type "kampanya başlık" döndürdüyse veya kampanya kodu varsa:
+     - `Search Campaign by Header One Result Tool` ile detayları al.
+   - "GENEL ARAMA" durumunda `Search Campaign by Header Tool` kullan.
+
+4. **Adım - Cevap Oluştur:**
+   - Elasticsearch'ten gelen verileri kullanarak `Generate Campaign Response Tool` veya V2 ile cevap üret.
+
+## ❗ KRİTİK HATA DURUMLARINDA:
+- Elasticsearch'ten veri gelmezse: "Üzgünüm, ilgili kampanya bulunamadı. Lütfen başka bir sorgu deneyin."
+- Araçlar yanlış sırada kullanılırsa: "Sistem hatası oluştu. Lütfen tekrar deneyin."
+
+## 📌 ÖNEMLİ UYARILAR:
+- Hiçbir koşulda kendi fikrini belirtme! YALNIZCA araçlardan gelen verileri kullan.
+- Araçları TAM İSİMLERİYLE çağır. (Örn: "Extract Campaign Code Tool" yerine "extract_tool" YOK)
+- Adımları atlama! Sıra: Detect Query Type → Check Relevance → Search → Generate Response
+"""
+
 # ----------------------------------------------------------------
 # Agent ve Agent Executor'un Başlatılması
 # ----------------------------------------------------------------
@@ -368,3 +426,194 @@ st.subheader("📜 Sohbet Geçmişi")
 for chat in st.session_state["chat_memory"]:
     st.write(f"**Soru:** {chat['input']}")
     st.write(f"**Yanıt:** {chat['response']}")
+
+
+
+
+
+
+#------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+import streamlit as st
+import os
+import json
+from collections import deque
+from langchain.tools import Tool
+from langchain.chat_models import AzureChatOpenAI
+from langchain.schema import HumanMessage
+from langchain.agents import initialize_agent, AgentExecutor, AgentType
+
+# ----------------------------------------------------------------
+# Dummy ElasticTextSearch Implementation
+# ----------------------------------------------------------------
+class ElasticTextSearch:
+    def __init__(self):
+        self.dummy_data = {
+            "KMP-2023": "Yaz İndirimi Kampanyası - Elektronik ürünlerde %30'a varan indirimler",
+            "KMP-2024": "Kış Tatili Kampanyası - Tüm seyahat paketlerinde erken rezervasyon avantajı",
+            "GENEL": ["Kampanya 1: Yeni müşteri %10 indirim", "Kampanya 2: Öğrencilere özel fırsat"]
+        }
+
+    def search_campaign_by_header(self, user_input):
+        if "KMP-" in user_input:
+            return self.dummy_data.get(user_input.split("KMP-")[1].strip(), "Kampanya bulunamadı")
+        return "\n".join(self.dummy_data["GENEL"][:3])
+
+    def get_top_campaigns(self):
+        return "\n".join(self.dummy_data["GENEL"][:3])
+
+es = ElasticTextSearch()
+
+# ----------------------------------------------------------------
+# OpenAI/Azure Client Initialization
+# ----------------------------------------------------------------
+def initialize_openai_client():
+    from openai import AzureOpenAI
+    return AzureOpenAI(
+        api_key=os.getenv("AZURE_OPENAI_KEY"),
+        api_version="2023-12-01-preview",
+        azure_endpoint="https://your-endpoint.openai.azure.com/"
+    )
+
+# ----------------------------------------------------------------
+# Session State Management
+# ----------------------------------------------------------------
+if "chat_memory" not in st.session_state:
+    st.session_state.chat_memory = deque(maxlen=3)
+if "current_campaign" not in st.session_state:
+    st.session_state.current_campaign = None
+
+# ----------------------------------------------------------------
+# Core Functions
+# ----------------------------------------------------------------
+def get_formatted_history():
+    return "\n".join(
+        [f"Soru: {chat['input']}\nYanıt: {chat['response']}" 
+         for chat in st.session_state.chat_memory]
+    )
+
+def extract_campaign_code(user_input: str) -> dict:
+    prompt = f"""Kullanıcı metnindeki kampanya kodunu çıkar:
+    Metin: {user_input}
+    Çıktı formatı: {{"campaign_code": "KMP-123"}} veya {{"campaign_code": null}}"""
+    result = llm([HumanMessage(content=prompt)])
+    try:
+        return json.loads(result.content)
+    except:
+        return {"campaign_code": None}
+
+def detect_query_type(user_input: str) -> str:
+    history = get_formatted_history()
+    prompt = f"""Sorgu tipini belirle:
+    Geçmiş Mesajlar: {history}
+    Son Sorgu: {user_input}
+    Çıktı: 'kampanya başlık: [TAM_AD]' veya 'GENEL ARAMA'"""
+    result = llm([HumanMessage(content=prompt)])
+    return result.content.strip()
+
+def check_follow_up_relevance(user_input: str) -> str:
+    if not st.session_state.chat_memory:
+        return "GENEL ARAMA"
+    
+    last_response = st.session_state.chat_memory[0]["response"]
+    prompt = f"""Yeni soru önceki kampanyayla ilişkili mi?
+    Önceki Yanıt: {last_response}
+    Yeni Soru: {user_input}
+    Çıktı: 'kampanya başlık: [TAM_AD]' veya 'GENEL ARAMA'"""
+    
+    result = llm([HumanMessage(content=prompt)])
+    return result.content.strip()
+
+def generate_campaign_response(user_input: str) -> str:
+    campaign_data = es.search_campaign_by_header(user_input)
+    prompt = f"""Kullanıcı sorusunu kampanya verileriyle yanıtla:
+    Soru: {user_input}
+    Veriler: {campaign_data}
+    Yanıt:"""
+    result = llm([HumanMessage(content=prompt)])
+    return result.content.strip()
+
+# ----------------------------------------------------------------
+# LangChain Tools
+# ----------------------------------------------------------------
+tools = [
+    Tool(
+        name="ExtractCampaignCode",
+        func=extract_campaign_code,
+        description="Kampanya kodunu çıkarmak için kullanılır"
+    ),
+    Tool(
+        name="DetectQueryType",
+        func=detect_query_type,
+        description="Sorgu tipini belirler (GENEL ARAMA veya spesifik kampanya)"
+    ),
+    Tool(
+        name="CheckFollowUpRelevance",
+        func=check_follow_up_relevance,
+        description="Yeni sorunun önceki bağlamla ilişkisini kontrol eder"
+    ),
+    Tool(
+        name="GenerateCampaignResponse",
+        func=generate_campaign_response,
+        description="Kampanya verilerine dayalı yanıt oluşturur"
+    )
+]
+
+# ----------------------------------------------------------------
+# Agent Configuration
+# ----------------------------------------------------------------
+system_prompt = """
+**KRİTİK KURALLAR:**
+1. Her sorguda sırayla şu araçları kullan:
+   a) DetectQueryType -> b) CheckFollowUpRelevance -> c) GenerateCampaignResponse
+2. DetectQueryType çıktısı 'kampanya başlık' içeriyorsa otomatik olarak GenerateCampaignResponse kullan
+3. 'GENEL ARAMA' durumunda en fazla 3 kampanya göster
+4. Hiçbir durumda kendi bilgini kullanma, sadece araç çıktılarını kullan
+"""
+
+llm = AzureChatOpenAI(
+    deployment_name="gpt-4",
+    temperature=0.3
+)
+
+agent = initialize_agent(
+    tools=tools,
+    llm=llm,
+    agent=AgentType.STRUCTURED_CHAT_ZERO_SHOT_REACT_DESCRIPTION,
+    verbose=True,
+    max_iterations=3,
+    agent_kwargs={
+        "prefix": system_prompt,
+        "memory_prompts": [],
+        "input_variables": ["input", "agent_scratchpad"]
+    }
+)
+
+# ----------------------------------------------------------------
+# Streamlit UI
+# ----------------------------------------------------------------
+st.title("🤖 Akıllı Kampanya Asistanı")
+
+user_input = st.chat_input("Sorunuzu buraya yazın...")
+
+if user_input:
+    with st.spinner("Analiz ediliyor..."):
+        try:
+            response = agent.run(user_input)
+            st.session_state.chat_memory.appendleft({
+                "input": user_input,
+                "response": response
+            })
+            
+            st.subheader("Yanıt")
+            st.write(response)
+            
+            st.subheader("Sohbet Geçmişi")
+            for msg in st.session_state.chat_memory:
+                st.markdown(f"**Soru:** {msg['input']}  \n**Yanıt:** {msg['response']}")
+                
+        except Exception as e:
+            st.error(f"Sistem hatası: {str(e)}")
+            st.info("Lütfen farklı bir şekilde tekrar deneyin")
+

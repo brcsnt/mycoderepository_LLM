@@ -586,6 +586,12 @@ def log_error(error: Exception) -> None:
 
 
 
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
 
 
 
@@ -690,3 +696,308 @@ def check_follow_up_relevance(user_input: str, last_message: str) -> str:
     
     output = json.loads(response.choices[0].message.content)
     return output.get("decision", "new query")  # Fallback
+
+
+
+
+
+
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+
+
+
+1. Geçmişe Mesaj Ekleme Mantığını Değiştirin
+Mevcut add_message fonksiyonunu, mesaj eklerken otomatik olarak son 3 mesajı tutacak şekilde güncelleyelim:
+
+    def add_message(user_query: str, bot_response: str) -> None:
+    """Sohbet geçmişine mesaj ekler (son 3 mesajı tutar)."""
+    # Mevcut geçmişi al
+    history = st.session_state.get("chat_memory", [])
+    
+    # Yeni mesajı ekle
+    history.append({"user": user_query, "bot": bot_response})
+    
+    # Son 3 mesajı tut
+    st.session_state.chat_memory = history[-3:]  # 🎯 Kritik satır
+
+
+2. Geçmiş Temizleme Mantığını Kaldırın
+Eski kodda geçmişi tamamen temizleyen bu kısmı silin:
+
+    # ❌ ESKİ KOD (SİLİNECEK)
+if len(st.session_state.chat_memory) >= 3:
+    st.session_state.chat_memory.clear()
+    st.warning("⚠️ Sohbet geçmişi dolduğu için sıfırlandı.")
+
+
+3. Geçmiş Gösterimini Optimize Edin
+Geçmişi gösterirken her zaman son 3 mesajı formatlayın:
+
+    def get_formatted_history() -> str:
+    """Son 3 mesajı okunabilir formatta döndürür."""
+    history = st.session_state.get("chat_memory", [])
+    return "\n\n".join(
+        [f"👤: {msg['user']}\n🤖: {msg['bot']}" 
+         for msg in history[-3:]]  # 🎯 Son 3'ü al
+    )
+
+
+4. Yeni Sorgu Durumunda Geçmişi Doğru Sıfırlayın
+new query durumunda geçmişi tamamen sıfırlamak yerine son 3 mesajı koruyun:
+
+
+    elif follow_up_response == "new query":
+    # ❌ ESKİ: st.session_state.chat_memory.clear()
+    # ✅ YENİ: Son 3 mesajı koru (veya isterseniz tamamen temizleyin)
+    st.session_state.chat_memory = st.session_state.chat_memory[-1:]  # Son 1 mesajı tut
+
+
+5. İsteğe Bağlı: Geçmiş Limitini Dinamik Yapın
+Sabit 3 mesaj yerine değişken limit:
+
+# Ayarlar bölümüne ekleyin
+HISTORY_LIMIT = 3  # İstenen sayıya çekilebilir
+
+def add_message(user_query: str, bot_response: str) -> None:
+    history = st.session_state.get("chat_memory", [])
+    history.append({"user": user_query, "bot": bot_response})
+    st.session_state.chat_memory = history[-HISTORY_LIMIT:]  # 🎯 Dinamik limit
+
+
+
+
+
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+
+
+
+import config_info
+import re
+import json
+import os
+import logging
+from collections import deque
+from typing import Optional, Dict, List
+from openai import AzureOpenAI
+import streamlit as st
+from elastic_search_retriever_embedding import ElasticTextSearch
+
+# Logger kurulumu
+logger = logging.getLogger(__name__)
+es = ElasticTextSearch()
+
+# Sabitler
+HISTORY_LIMIT = 3  # Son 3 mesajı sakla
+MAX_RETRY_ATTEMPTS = 3  # Maksimum yeniden deneme
+
+# Hata sınıfları
+class ElasticsearchError(Exception):
+    pass
+
+class OpenAIError(Exception):
+    pass
+
+# Kullanıcı sorusunda kampanya kodunun bulunması (Güncellenmiş regex ile)
+def extract_campaign_code(query: str) -> Optional[str]:
+    """Metin içindeki kampanya kodunu çıkarır (Gelişmiş regex ile)."""
+    logger.debug(f"Kampanya kodu çıkarılıyor: {query}")
+    
+    # Gelişmiş regex pattern
+    pattern = r"\b(?:KAMP|CMP|KY)[-_]?\d{3,}[A-Z]?\b"  # KAMP123, CMP-456A gibi
+    match = re.search(pattern, query, re.IGNORECASE)
+    
+    return match.group().upper() if match else None
+
+# OpenAI bağlantı bilgileri (Hata yönetimi eklenmiş)
+def initialize_openai_client() -> AzureOpenAI:
+    """OpenAI client'ını başlatır ve hataları yönetir."""
+    try:
+        os.environ["HTTP_PROXY"] = config_info.http_proxy
+        os.environ["HTTPS_PROXY"] = config_info.https_proxy
+
+        return AzureOpenAI(
+            azure_api_key=config_info.azure_api_key,
+            api_version=config_info.azure_api_version,
+            azure_endpoint=config_info.azure_endpoint
+        )
+    except Exception as e:
+        logger.error(f"OpenAI bağlantı hatası: {str(e)}")
+        raise OpenAIError("OpenAI servisine bağlanılamıyor")
+
+# Sohbet Geçmişi Yönetimi (Son 3 mesaj)
+def manage_chat_history(user_input: str, response: str) -> None:
+    """Sohbet geçmişini son 3 mesajla sınırlar."""
+    history = st.session_state.get("chat_memory", [])
+    history.append({"user": user_input, "bot": response})
+    st.session_state.chat_memory = history[-HISTORY_LIMIT:]
+
+def get_formatted_history() -> str:
+    """Son 3 mesajı formatlar."""
+    history = st.session_state.get("chat_memory", [])
+    return "\n\n".join(
+        [f"👤: {msg['user']}\n🤖: {msg['bot']}" 
+         for msg in history[-HISTORY_LIMIT:]]
+    )
+
+# Gelişmiş Sistem Prompt'ları
+DETECT_QUERY_PROMPT = """# GÖREV
+Kullanıcı mesajını aşağıdaki KURALLARA göre sınıflandır:
+
+## KURALLAR
+1. Genel kampanya listesi veya kriter belirtilmezse → "GENEL_ARAMA"
+2. Spesifik kampanya adı/parametre belirtilirse → [KAMPANYA_ADI]
+
+## ÇIKTI FORMATI
+- YALNIZCA "GENEL_ARAMA" veya kampanya adı"""
+
+FOLLOW_UP_PROMPT = """# GÖREV
+Kullanıcının yeni sorusunu önceki mesajla ilişkilendir:
+
+## KURALLAR
+1. Kampanya kodu varsa → "kampanya kodu: [KOD]"
+2. Kampanya başlığı varsa → "kampanya başlık: [BASLIK]"
+3. İlişki yoksa → "new query"
+
+## ÇIKTI FORMATI
+AŞAĞIDAKİLERDEN BİRİ:
+- kampanya kodu: [KOD]
+- kampanya başlık: [BASLIK]
+- new query"""
+
+def detect_query_type(user_input: str) -> str:
+    """Gelişmiş sorgu tipi belirleme."""
+    try:
+        client = initialize_openai_client()
+        response = client.chat.completions.create(
+            model=config_info.deployment_name,
+            messages=[
+                {"role": "system", "content": DETECT_QUERY_PROMPT},
+                {"role": "user", "content": f"Kullanıcı Mesajı: {user_input}"}
+            ],
+            temperature=0,
+            max_tokens=50,
+            stop=["\n"]
+        )
+        raw_output = response.choices[0].message.content.strip()
+        
+        # Validasyon
+        return raw_output if raw_output in ["GENEL_ARAMA"] else raw_output[:60]  # Max 60 karakter
+
+    except Exception as e:
+        logger.error(f"Sorgu tipi belirleme hatası: {str(e)}")
+        return "GENEL_ARAMA"  # Fallback
+
+def check_follow_up_relevance(user_input: str, last_message: str) -> str:
+    """Optimize edilmiş bağlam takibi."""
+    try:
+        client = initialize_openai_client()
+        response = client.chat.completions.create(
+            model=config_info.deployment_name,
+            messages=[
+                {"role": "system", "content": FOLLOW_UP_PROMPT},
+                {"role": "user", "content": f"Önceki Mesaj: {last_message}\nYeni Soru: {user_input}"}
+            ],
+            temperature=0,
+            max_tokens=100,
+            response_format={"type": "json_object"}
+        )
+        output = json.loads(response.choices[0].message.content)
+        return output.get("decision", "new query")
+    
+    except Exception as e:
+        logger.error(f"Follow-up analiz hatası: {str(e)}")
+        return "new query"
+
+# Ana İş Akışı
+def process_user_input(user_input: str) -> None:
+    """Yeni iş akışı ile kullanıcı girdisini işler."""
+    if not user_input:
+        st.warning("⚠️ Lütfen geçerli bir mesaj girin.")
+        return
+
+    with st.spinner("💭 Düşünüyorum..."):
+        try:
+            # 1. Kampanya Kodu Kontrolü
+            campaign_code = extract_campaign_code(user_input)
+            
+            if campaign_code:
+                # Kampanya kodu akışı
+                try:
+                    campaign_info = es.get_best_related(campaign_code)
+                    if not campaign_info:
+                        raise ElasticsearchError("Kampanya bulunamadı")
+                        
+                    response = generate_campaign_response(user_input, campaign_info)
+                    st.subheader(f"🔎 {campaign_code} Yanıtı")
+                    st.write(response)
+                    manage_chat_history(user_input, response)
+                    
+                except ElasticsearchError as e:
+                    st.error(f"⚠️ {str(e)}")
+                    return
+
+            else:
+                # 2. Sorgu Tipi Analizi
+                query_type = detect_query_type(user_input)
+                st.info(f"🔍 Algılanan Sorgu Tipi: {query_type}")
+
+                if query_type == "GENEL_ARAMA":
+                    _, formatted_result = es.search_campaign_by_header(user_input)
+                    st.subheader("🔎 Önerilen Kampanyalar")
+                    st.write(formatted_result)
+                    manage_chat_history(user_input, formatted_result)
+                
+                else:
+                    # 3. Follow-up Kontrolü
+                    formatted_history = get_formatted_history()
+                    follow_up = check_follow_up_relevance(user_input, formatted_history)
+                    st.info(f"🔄 Bağlam Analizi: {follow_up}")
+
+                    # Follow-up İşlemleri
+                    if follow_up.startswith("kampanya kodu:"):
+                        code = follow_up.split(":")[1].strip()
+                        campaign_info = es.get_best_related(code)
+                        response = generate_campaign_response(user_input, campaign_info)
+                        st.subheader(f"📌 {code} Yanıtı")
+                        st.write(response)
+                        manage_chat_history(user_input, response)
+
+                    elif follow_up.startswith("kampanya başlık:"):
+                        title = follow_up.split(":")[1].strip()
+                        campaign_info = es.search_campaign_by_title(title)
+                        response = generate_campaign_response(user_input, campaign_info)
+                        st.subheader(f"📌 {title} Yanıtı")
+                        st.write(response)
+                        manage_chat_history(user_input, response)
+
+                    else:
+                        st.info("🤔 Lütfen sorunuzu netleştirin.")
+                        manage_chat_history(user_input, "Belirsiz sorgu")
+
+        except Exception as e:
+            st.error(f"⛔ Kritik hata: {str(e)}")
+            logger.critical(f"Sistem hatası: {str(e)}")
+
+# Streamlit Arayüzü
+st.title("🤖 Akıllı Kampanya Asistanı")
+st.markdown("### Lütfen kampanyalarla ilgili sorularınızı girin")
+
+user_input = st.text_input("Mesajınız...")
+
+if user_input:
+    process_user_input(user_input)
+
+# Geçmiş Gösterimi
+if st.session_state.get("chat_memory"):
+    st.subheader("📖 Sohbet Geçmişi")
+    st.write(get_formatted_history())

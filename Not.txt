@@ -4,6 +4,47 @@ First, the user types a question into the chatbot. The question is sent to the c
 
 To ensure that the information is always up to date, campaign data is synchronized from the SQL database to Elasticsearch every hour. This way, users can always access the most accurate and updated campaign details.
 
+.................
+
+XYZ Bot Plus is designed to help different teams access campaign information quickly and efficiently.
+
+The main users of this system include:
+	•	Complaint Management Teams, who need quick access to campaign details to assist customers.
+	•	Customer Contact Centers, where agents can provide faster responses.
+	•	Retail Customer Solutions Teams, who support customers with accurate information.
+	•	Operational Teams, who handle campaign-related tasks efficiently.
+	•	Branches, where employees can instantly retrieve campaign details.
+
+This chatbot brings several benefits:
+✔ No need for manual searching – Users don’t have to go through long campaign documents.
+✔ Easy access – Just ask a question, and the bot provides the relevant details.
+✔ Faster response times – Employees can assist customers more efficiently.
+✔ Time-saving – The response time is reduced from 30 seconds to 10 seconds, saving approximately 2,777 hours per year across 500,000 inquiries.
+
+So, what’s next?
+We are working on improving XYZ Bot Plus with semantic search, allowing users to find information based on campaign content, not just campaign codes. This will make searches more flexible and accurate.
+.........
+
+XYZ Bot Plus is a chatbot designed to help different teams quickly access campaign information without manually searching through long documents.
+
+The main users of this system are:
+	•	Complaint Management Teams, who need fast access to campaign details to assist customers.
+	•	Customer Contact Centers, where agents can provide quicker and more accurate responses.
+	•	Retail Customer Solutions Teams, who support customers with the right information.
+	•	Operational Teams, who handle campaign-related tasks more efficiently.
+	•	Branches, where employees can instantly retrieve campaign details.
+
+This chatbot offers several benefits:
+	•	It eliminates the need for manual searches, saving employees time.
+	•	Users can simply ask a question and get the relevant campaign details instantly.
+	•	It allows employees to respond to customer inquiries much faster.
+	•	The response time is reduced from 30 seconds to 10 seconds, saving approximately 2,777 hours per year across 500,000 inquiries.
+
+Looking ahead, the next improvement for XYZ Bot Plus is semantic search. This feature will allow users to find information based on campaign content, not just campaign codes, making searches more flexible and accurate.
+
+
+
+
 
 
 

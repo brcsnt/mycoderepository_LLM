@@ -1,3 +1,15 @@
+XYZ Bot Plus is a chatbot system that allows users to quickly and accurately access campaign information. Instead of searching manually, users can simply ask a question through the chatbot interface and get campaign details instantly.
+
+First, the user types a question into the chatbot. The question is sent to the campaign bot, which searches the Elasticsearch database for the relevant campaign code and description. Then, the bot combines the user’s question with the campaign details and sends it to the Large Language Model (LLM) to generate the most accurate response. The LLM analyzes the question and creates a suitable answer. Finally, the chatbot delivers the response to the user, providing quick access to the necessary information without the need for manual searching.
+
+To ensure that the information is always up to date, campaign data is synchronized from the SQL database to Elasticsearch every hour. This way, users can always access the most accurate and updated campaign details.
+
+
+
+
+
+
+
 Here’s the English version in a conversational tone with numbers written out:
 
 XYZ Bot Plus is a chatbot application powered by new technologies that gathers all campaign information and details from our bank into a single platform.

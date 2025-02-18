@@ -950,3 +950,209 @@ if st.button("🔄 Konuşmayı Yeniden Başlat"):
 
 
 
+import json
+import streamlit as st
+from collections import deque
+from openai import AzureOpenAI
+from elastic_search_retriever_embedding import ElasticTextSearch
+from datetime import datetime
+
+# ----------------------
+# 1. SABİT TANIMLAMALAR
+# ----------------------
+MAX_HISTORY = 3  # Son 3 mesaj saklanacak
+PROMPT_1 = """**Role:** Kampanya analisti... [PROMPT_1 içeriği]"""
+FOLLOW_UP_PROMPT = """**Role:** Akıllı asistan... [FOLLOW_UP_PROMPT içeriği]"""
+
+# ----------------------
+# 2. OPENAI BAĞLANTISI
+# ----------------------
+def initialize_openai_client():
+    """Azure OpenAI client'ını başlatır ve session state'e kaydeder"""
+    if "openai_client" not in st.session_state:
+        st.session_state.openai_client = AzureOpenAI(
+            api_key=st.secrets["AZURE_API_KEY"],
+            api_version=st.secrets["AZURE_API_VERSION"],
+            azure_endpoint=st.secrets["AZURE_ENDPOINT"]
+        )
+    return st.session_state.openai_client
+
+# ----------------------
+# 3. DİYALOG YÖNETİCİSİ
+# ----------------------
+class DialogManager:
+    """Konuşma geçmişini ve bağlamı yöneten sınıf"""
+    
+    def __init__(self):
+        # Session state başlatma
+        if "history" not in st.session_state:
+            st.session_state.history = deque(maxlen=MAX_HISTORY)  # Son 3 mesaj
+            st.session_state.active_context = None  # GENEL/SPESİFİK/FOLLOWUP
+            st.session_state.active_campaign = None  # Aktif kampanya bilgileri
+        
+    def update_history(self, user_input, response, allow_history=True):
+        """Geçmişi koşullu olarak günceller"""
+        if allow_history:
+            st.session_state.history.append({
+                "user": user_input,
+                "bot": response,
+                "timestamp": datetime.now().isoformat()
+            })
+    
+    def handle_campaign_context(self, processed_data):
+        """Aktif kampanya context'ini günceller"""
+        # Rule 1: Kampanya kodu varsa
+        if processed_data.get("campaign_code"):
+            st.session_state.active_campaign = {
+                "type": "CODE",
+                "value": processed_data["campaign_code"],
+                "data": None  # Elastic'ten gelecek veri için
+            }
+        # Rule 2: Spesifik kampanya başlığı varsa
+        elif processed_data.get("spesific_campaign_header"):
+            st.session_state.active_campaign = {
+                "type": "HEADER",
+                "value": processed_data["spesific_campaign_header"],
+                "data": None
+            }
+        # Rule 3: Genel sorgu
+        else:
+            st.session_state.active_context = "GENEL"
+
+    def reset_conversation(self):
+        """Konuşmayı tamamen sıfırlar (NO3 durumu için)"""
+        st.session_state.history.clear()
+        st.session_state.active_context = None
+        st.session_state.active_campaign = None
+
+# ----------------------
+# 4. VERİ İŞLEME FONKSİYONLARI
+# ----------------------
+class DataProcessor:
+    """Veri işleme operasyonlarını yönetir"""
+    
+    @staticmethod
+    def process_campaign_response(json_str):
+        """PROMPT_1 çıktısını işler ve standart formata dönüştürür"""
+        try:
+            data = json.loads(json_str)
+            # Rule 4: NO2/NO3 durumlarını işaretle
+            return {
+                "status": "OK" if "ANSWER" not in data else data["ANSWER"],
+                "data": {k:v for k,v in data.items() if k != "ANSWER"}
+            }
+        except Exception as e:
+            return {"status": "ERROR", "error": str(e)}
+    
+    @staticmethod
+    def generate_response(client, user_input, context):
+        """GPT ile bağlamsal yanıt oluşturur"""
+        messages = [
+            {"role": "system", "content": f"## KONTEXT ##\n{json.dumps(context)}"},
+            {"role": "user", "content": user_input}
+        ]
+        response = client.chat.completions.create(
+            model=st.secrets["DEPLOYMENT_NAME"],
+            messages=messages,
+            temperature=0.3
+        )
+        return response.choices[0].message.content
+
+# ----------------------
+# 5. ANA İŞLEM AKIŞI (RULE-BASED)
+# ----------------------
+def process_user_input(user_input):
+    """Kullanıcı girdisini işleyen ana fonksiyon"""
+    
+    # 5.1 Gerekli bileşenleri başlat
+    dialog = DialogManager()
+    client = initialize_openai_client()
+    es = ElasticTextSearch()
+    processor = DataProcessor()
+    
+    # 5.2 Temel sorgu analizi (PROMPT_1)
+    raw_response = client.chat.completions.create(
+        model=st.secrets["DEPLOYMENT_NAME"],
+        messages=[{"role": "system", "content": PROMPT_1}, {"role": "user", "content": user_input}],
+        response_format={"type": "json_object"}
+    )
+    processed_data = processor.process_campaign_response(raw_response.choices[0].message.content)
+    
+    # Rule 5: Kampanya sorumlusu sorgusu
+    if processed_data["data"].get("campaign_responsible") == "YES":
+        # Dummy veri gösterimi
+        responsible_info = {
+            "name": "Ahmet Yılmaz",
+            "email": "ahmet.yilmaz@sirket.com",
+            "phone": "+90 555 123 45 67"
+        }
+        response = f"""🕴️ **Kampanya Sorumlusu:**
+        - İsim: {responsible_info['name']}
+        - İletişim: {responsible_info['email']} | {responsible_info['phone']}"""
+        st.markdown(response)
+        # Geçmişe EKLEME ve context'i değiştirme
+        dialog.update_history(user_input, response, allow_history=False)
+        return
+    
+    # 5.3 Context güncelleme
+    dialog.handle_campaign_context(processed_data["data"])
+    
+    # 5.4 Veri çekme operasyonları
+    try:
+        # Rule 6: Kampanya koduna göre arama
+        if st.session_state.active_campaign["type"] == "CODE":
+            campaign_data = es.get_by_code(st.session_state.active_campaign["value"])
+        # Rule 7: Başlığa göre arama
+        elif st.session_state.active_campaign["type"] == "HEADER":
+            campaign_data = es.search_by_header(st.session_state.active_campaign["value"])
+        # Rule 8: Genel arama
+        else:
+            campaign_data = es.get_general_campaigns()
+    except Exception as e:
+        st.error(f"🔍 ElasticSearch Hatası: {str(e)}")
+        return
+    
+    # 5.5 GPT ile yanıt oluşturma
+    bot_response = processor.generate_response(client, user_input, campaign_data)
+    
+    # 5.6 Çıktıları işleme
+    st.subheader("🤖 Asistan Yanıtı")
+    st.markdown(bot_response)
+    
+    # 5.7 Geçmişi güncelle (Son 3 mesaj kuralı)
+    dialog.update_history(user_input, bot_response)
+    
+    # 5.8 Follow-up kontrolü (PROMPT_2)
+    if st.session_state.active_campaign:
+        follow_up_result = client.chat.completions.create(
+            model=st.secrets["DEPLOYMENT_NAME"],
+            messages=[{"role": "system", "content": FOLLOW_UP_PROMPT}, {"role": "user", "content": user_input}],
+            response_format={"type": "json_object"}
+        )
+        # Rule 9: NO3 durumunda akışı sıfırla
+        if json.loads(follow_up_result.choices[0].message.content).get("ANSWER") == "NO3":
+            dialog.reset_conversation()
+
+# ----------------------
+# 6. STREAMLIT ARAYÜZ
+# ----------------------
+st.title("💬 Akıllı Kampanya Asistanı")
+st.caption(f"✅ Son {MAX_HISTORY} mesaj saklanır | 🚫 Hassas bilgiler kaydedilmez")
+
+# Kullanıcı girdisi
+user_input = st.chat_input("Sorunuzu buraya yazın...")
+if user_input:
+    process_user_input(user_input)
+
+# Konuşma geçmişi gösterimi
+if st.session_state.history:
+    st.subheader("📜 Son Konuşmalar")
+    for msg in list(st.session_state.history)[::-1]:  # En yeni üstte
+        st.markdown(f"**👤:** {msg['user']}")
+        st.markdown(f"**🤖:** {msg['bot']}")
+        st.divider()
+
+# Manuel sıfırlama butonu
+if st.button("🔄 Konuşmayı Yeniden Başlat"):
+    DialogManager().reset_conversation()
+

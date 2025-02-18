@@ -1156,3 +1156,228 @@ if st.session_state.history:
 if st.button("🔄 Konuşmayı Yeniden Başlat"):
     DialogManager().reset_conversation()
 
+
+
+
+
+
+#######################################################################################
+#######################################################################################
+#######################################################################################
+#######################################################################################
+#######################################################################################
+#######################################################################################
+
+
+
+
+
+
+
+
+import json
+import streamlit as st
+from collections import deque
+from openai import AzureOpenAI
+from datetime import datetime
+
+# ----------------------
+# 1. SABİT TANIMLAMALAR
+# ----------------------
+MAX_HISTORY = 3  # Son 3 mesaj saklama limiti
+PROMPT_1 = """[Kampanya analizi için PROMPT_1 içeriği]"""
+PROMPT_2 = """[Follow-up analizi için PROMPT_2 içeriği]"""
+
+# ----------------------
+# 2. OPENAI KONFİGÜRASYONU
+# ----------------------
+def initialize_openai_client():
+    """Azure OpenAI client'ını başlatır ve session state'e kaydeder"""
+    if "openai_client" not in st.session_state:
+        st.session_state.openai_client = AzureOpenAI(
+            api_key=st.secrets["AZURE_API_KEY"],
+            api_version=st.secrets["AZURE_API_VERSION"],
+            azure_endpoint=st.secrets["AZURE_ENDPOINT"]
+        )
+    return st.session_state.openai_client
+
+# ----------------------
+# 3. DİYALOG YÖNETİCİSİ
+# ----------------------
+class DialogManager:
+    """Konuşma geçmişi ve bağlam yönetimi için merkezi sınıf"""
+    
+    def __init__(self):
+        # Session state başlatma
+        if "history" not in st.session_state:
+            st.session_state.history = deque(maxlen=MAX_HISTORY)  # Rule 1: Son 3 mesaj
+            st.session_state.active_context = {
+                "type": None,  # CODE/HEADER/GENEL
+                "value": None  # Kampanya kodu/başlık
+            }
+        
+    def update_history(self, user_input, response, allow_history=True):
+        """Geçmişi koşullu olarak günceller"""
+        # Rule 2: Sorumlu sorguları geçmişe eklenmez
+        if allow_history:
+            st.session_state.history.append({
+                "user": user_input,
+                "bot": response,
+                "timestamp": datetime.now().isoformat()
+            })
+    
+    def reset_context(self):
+        """Bağlamı sıfırlar (Rule 3: GENEL sorgu sonrası)"""
+        st.session_state.active_context = {"type": None, "value": None}
+
+# ----------------------
+# 4. VERİ İŞLEME FONKSİYONLARI
+# ----------------------
+class DataProcessor:
+    """Veri işleme ve analiz operasyonlarını yönetir"""
+    
+    @staticmethod
+    def analyze_query(client, prompt_template, user_input, history=""):
+        """OpenAI ile sorgu analizi yapar"""
+        messages = [
+            {"role": "system", "content": prompt_template},
+            {"role": "user", "content": f"{history}\nSoru: {user_input}"}
+        ]
+        response = client.chat.completions.create(
+            model=st.secrets["DEPLOYMENT_NAME"],
+            messages=messages,
+            temperature=0,
+            response_format={"type": "json_object"}
+        )
+        return json.loads(response.choices[0].message.content)
+    
+    @staticmethod
+    def handle_responsible_query():
+        """Kampanya sorumlusu bilgilerini işler (Rule 4)"""
+        # Dummy veri - Elastic'ten çekiliyormuş gibi
+        return {
+            "name": "Ahmet Yılmaz",
+            "email": "ahmet.yilmaz@firma.com",
+            "phone": "+90 555 123 45 67"
+        }
+
+# ----------------------
+# 5. ELASTICSEARCH OPERASYONLARI
+# ----------------------
+class ElasticOperations:
+    """ElasticSearch işlemleri için mock sınıfı"""
+    
+    @staticmethod
+    def get_by_code(code):
+        # Rule 5: Kampanya koduna göre veri çek
+        return {"code": code, "details": "Kampanya detayları..."}
+    
+    @staticmethod
+    def get_by_header(header):
+        # Rule 6: Başlığa göre veri çek
+        return {"header": header, "details": "Kampanya detayları..."}
+    
+    @staticmethod
+    def get_general():
+        # Rule 7: Genel kampanya listesi
+        return [{"id": 1, "name": "Genel Kampanya 1"}, {"id": 2, "name": "Genel Kampanya 2"}]
+
+# ----------------------
+# 6. ANA İŞLEM AKIŞI
+# ----------------------
+def process_user_input(user_input):
+    """Kullanıcı girdisini işleyen ana fonksiyon"""
+    
+    # 6.1 Gerekli bileşenleri başlat
+    dialog = DialogManager()
+    client = initialize_openai_client()
+    processor = DataProcessor()
+    es = ElasticOperations()
+    
+    # 6.2 Temel sorgu analizi (PROMPT_1)
+    analysis = processor.analyze_query(client, PROMPT_1, user_input)
+    
+    # 6.3 Kampanya sorumlusu sorgusu (Rule 4)
+    if analysis.get("campaign_responsible") == "YES":
+        responsible_info = processor.handle_responsible_query()
+        response = f"""🕴️ **Kampanya Sorumlusu:**
+        - İsim: {responsible_info['name']}
+        - E-posta: {responsible_info['email']}
+        - Telefon: {responsible_info['phone']}"""
+        st.markdown(response)
+        dialog.update_history(user_input, response, allow_history=False)
+        return
+    
+    # 6.4 Context belirleme
+    context_type = None
+    if analysis.get("campaign_code"):
+        context_type = "CODE"
+        context_value = analysis["campaign_code"]
+    elif analysis.get("specific_campaign_header"):
+        context_type = "HEADER"
+        context_value = analysis["specific_campaign_header"]
+    else:
+        context_type = "GENEL"
+    
+    # 6.5 Veri çekme operasyonları
+    try:
+        if context_type == "CODE":
+            data = es.get_by_code(context_value)
+        elif context_type == "HEADER":
+            data = es.get_by_header(context_value)
+        else:
+            data = es.get_general()
+    except Exception as e:
+        st.error(f"🔍 Veri çekme hatası: {str(e)}")
+        return
+    
+    # 6.6 GPT ile yanıt oluşturma
+    gpt_response = processor.analyze_query(
+        client, 
+        f"Context: {json.dumps(data)}\nYanıt oluştur:", 
+        user_input
+    ).get("response")
+    
+    # 6.7 Çıktıyı işleme
+    st.subheader("🤖 Asistan Yanıtı")
+    st.markdown(gpt_response)
+    
+    # 6.8 Geçmişi güncelle
+    dialog.update_history(user_input, gpt_response)
+    
+    # 6.9 Follow-up kontrolü (PROMPT_2)
+    if context_type in ["CODE", "HEADER"]:
+        follow_up_analysis = processor.analyze_query(client, PROMPT_2, user_input)
+        # Rule 8: NO3 durumunda akışı sıfırla
+        if follow_up_analysis.get("ANSWER") == "NO3":
+            dialog.reset_context()
+            st.experimental_rerun()
+
+    # Rule 9: GENEL sorgu sonrası akışı sıfırla
+    if context_type == "GENEL":
+        dialog.reset_context()
+
+# ----------------------
+# 7. STREAMLIT ARAYÜZ
+# ----------------------
+st.title("💬 Akıllı Kampanya Asistanı")
+st.caption(f"✅ Son {MAX_HISTORY} mesaj saklanır | 🚫 Hassas sorgular kaydedilmez")
+
+# Kullanıcı girdi alanı
+user_input = st.chat_input("Sorunuzu buraya yazın...")
+if user_input:
+    process_user_input(user_input)
+
+# Konuşma geçmişi gösterimi
+if st.session_state.history:
+    st.subheader("📜 Son Konuşmalar")
+    for msg in list(st.session_state.history)[::-1]:  # Yeni -> Eski sıralama
+        st.markdown(f"**👤:** {msg['user']}")
+        st.markdown(f"**🤖:** {msg['bot']}")
+        st.divider()
+
+# Manuel sıfırlama butonu
+if st.button("🔄 Konuşmayı Yeniden Başlat"):
+    DialogManager().reset_context()
+    st.experimental_rerun()
+

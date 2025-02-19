@@ -850,3 +850,399 @@ Below are some examples of user inputs (in Turkish) and the **only** valid JSON 
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+import os
+import json
+import openai
+import streamlit as st
+from elastic_search_retriever_embedding import ElasticTextSearch
+import config_info
+
+# Varsayılan max token sayısı
+DEFAULT_MAX_TOKENS = 150
+
+# Routing prompt tanımı
+ROUTING_PROMPT = """ 
+Lütfen aşağıdaki formatta JSON çıktısı üret:
+{
+    "campaign_code": "",
+    "campaign_responsible_ask": "",
+    "spesific_campaign_header": "",
+    "general_campaign_header": "",
+    "follow_up_campaign_code": "",
+    "follow_up_campaign_header": "",
+    "campaign_related": "",
+    "pii_check_control": ""
+}
+Kurallara göre:
+- campaign_responsible_ask, campaign_related ve pii_check_control sadece "YES", "NO" veya boş olabilir.
+"""
+
+class CampaignAssistant:
+    def __init__(self):
+        """
+        Kampanya Asistanı için gerekli konfigürasyon ve başlangıç ayarlarını yapar.
+        - config_info modülündeki ayarlar kullanılır.
+        - Sohbet geçmişi (history) Streamlit session state üzerinden tutulur.
+        """
+        self.config = config_info
+        self.max_tokens = DEFAULT_MAX_TOKENS
+        self.routing_prompt = ROUTING_PROMPT
+
+        # Streamlit session_state üzerinden sohbet geçmişini başlatıyoruz.
+        if "history" not in st.session_state:
+            st.session_state.history = []
+        self.history = st.session_state.history
+
+    def update_history(self, user_question: str, bot_response: str, add_to_history: bool = True):
+        """
+        Kullanıcı ve sistem (bot) mesajlarını sohbet geçmişine ekler.
+        Eğer add_to_history False ise, mesaj geçmişine ekleme yapılmaz.
+        Sadece son 3 mesajı saklar.
+        """
+        if not add_to_history:
+            return
+
+        self.history.append({
+            "user_question": user_question,
+            "bot_response": bot_response
+        })
+
+        # Yalnızca son 3 mesajı saklayacak şekilde güncelle
+        if len(self.history) > 3:
+            self.history = self.history[-3:]
+        st.session_state.history = self.history
+
+    def get_formatted_history(self) -> str:
+        """
+        Sohbet geçmişini, istenen formatta (en son mesaj en üstte olacak şekilde) metin olarak döndürür.
+        """
+        formatted_lines = []
+        n = len(self.history)
+        if n >= 1:
+            conv = self.history[-1]
+            formatted_lines.append("Kullanıcının son sorusu:")
+            formatted_lines.append(conv["user_question"])
+            formatted_lines.append("Kullanıcının son sorusunun cevabı:")
+            formatted_lines.append(conv["bot_response"])
+        if n >= 2:
+            conv = self.history[-2]
+            formatted_lines.append("Kullanıcının sondan ikinci sorusu:")
+            formatted_lines.append(conv["user_question"])
+            formatted_lines.append("Kullanıcının sondan ikinci sorusunun cevabı:")
+            formatted_lines.append(conv["bot_response"])
+        if n >= 3:
+            conv = self.history[-3]
+            formatted_lines.append("Kullanıcının sondan üçüncü sorusu:")
+            formatted_lines.append(conv["user_question"])
+            formatted_lines.append("Kullanıcının sondan üçüncü sorusunun cevabı:")
+            formatted_lines.append(conv["bot_response"])
+        return "\n".join(formatted_lines)
+
+    def post_process_campaign_response(self, json_response: str) -> dict:
+        """
+        OpenAI'dan gelen JSON yanıtını parse eder ve zorunlu alanların varlığını kontrol eder.
+        Hatalı formatlarda ValueError fırlatır.
+        """
+        required_keys = [
+            "campaign_code",
+            "campaign_responsible_ask",
+            "spesific_campaign_header",
+            "general_campaign_header",
+            "follow_up_campaign_code",
+            "follow_up_campaign_header",
+            "campaign_related",
+            "pii_check_control"
+        ]
+        try:
+            data = json.loads(json_response)
+        except json.JSONDecodeError as e:
+            raise ValueError(f"Invalid JSON format: {e}")
+
+        for key in required_keys:
+            if key not in data:
+                raise ValueError(f"Missing required field in JSON response: '{key}'")
+
+        # Sadece "YES", "NO" veya boş string kontrolü
+        yes_no_fields = [
+            "campaign_responsible_ask",
+            "campaign_related",
+            "pii_check_control"
+        ]
+        for field in yes_no_fields:
+            value = data[field].strip().upper()
+            if value not in ["YES", "NO", ""]:
+                raise ValueError(
+                    f"Field '{field}' must be 'YES', 'NO', or an empty string. Got: '{data[field]}'"
+                )
+            data[field] = value  # Normalizasyon
+        return data
+
+    def initialize_openai_client(self):
+        """
+        OpenAI (Azure OpenAI) istemcisini, config_info'da tanımlı ayarlarla başlatır.
+        Proxy ve API anahtarları ayarlanır.
+        """
+        try:
+            os.environ["HTTP_PROXY"] = self.config.http_proxy
+            os.environ["HTTPS_PROXY"] = self.config.https_proxy
+            openai.api_key = self.config.api_key
+            # AzureOpenAI sınıfının doğru şekilde import edildiğini varsayıyoruz.
+            client = AzureOpenAI(
+                azure_api_key=self.config.azure_api_key,
+                api_version=self.config.azure_api_version,
+                azure_endpoint=self.config.azure_endpoint
+            )
+            return client
+        except Exception as e:
+            raise RuntimeError(f"OpenAI client initialization failed: {e}")
+
+    def generate_routing_response(self, user_prompt: str) -> dict:
+        """
+        Kullanıcının sorusunu, routing prompt üzerinden OpenAI API ile yönlendirir.
+        Yanıtı post_process_campaign_response ile doğrular ve sözlük olarak döndürür.
+        """
+        client = self.initialize_openai_client()
+        routing_response_text = "Verilen talimatalara uygun olarak soruya cevap ver: " + user_prompt
+        messages = [
+            {"role": "system", "content": self.routing_prompt},
+            {"role": "user", "content": routing_response_text}
+        ]
+        try:
+            response = client.chat.completions.create(
+                model=self.config.deployment_name,
+                messages=messages,
+                temperature=0,
+                max_tokens=self.max_tokens
+            )
+            response_json = response.to_json()
+            routing_data = self.post_process_campaign_response(response_json)
+            return routing_data
+        except Exception as e:
+            raise RuntimeError(f"Routing response generation failed: {e}")
+
+    def generate_campaign_response(self, user_prompt: str, campaign_description=None) -> str:
+        """
+        Kampanya yanıtı üretir (campaign_code için akış).
+        OpenAI API ile tanımlı sistem prompt ve kampanya metni üzerinden cevap üretir.
+        """
+        client = self.initialize_openai_client()
+        rag_prompt = "Soruya cevap ver: " + user_prompt + "\n\nKampanya metin içeriği: " + str(campaign_description)
+        messages = [
+            {"role": "system", "content": self.config.SYSTEM_PROMPT_MAIN_LAYER},
+            {"role": "user", "content": rag_prompt}
+        ]
+        try:
+            response = client.chat.completions.create(
+                model=self.config.deployment_name,
+                messages=messages,
+                temperature=0,
+                max_tokens=self.max_tokens
+            )
+            response_data = json.loads(response.to_json())
+            return response_data["choices"][0]["message"]["content"].strip()
+        except Exception as e:
+            raise RuntimeError(f"Campaign response generation failed: {e}")
+
+    def generate_campaign_response_v2(self, user_prompt: str, campaign_description=None) -> str:
+        """
+        Spesifik kampanya başlığı (spesific_campaign_header) için yanıt üretir.
+        """
+        client = self.initialize_openai_client()
+        rag_prompt = "Soruya cevap ver: " + user_prompt + "\n\nKampanya metin içeriği: " + str(campaign_description)
+        messages = [
+            {"role": "system", "content": "Kampanya ile ilgili sorulara cevap ver"},
+            {"role": "user", "content": rag_prompt}
+        ]
+        try:
+            response = client.chat.completions.create(
+                model=self.config.deployment_name,
+                messages=messages,
+                temperature=0,
+                max_tokens=self.max_tokens
+            )
+            response_data = json.loads(response.to_json())
+            return response_data["choices"][0]["message"]["content"].strip()
+        except Exception as e:
+            raise RuntimeError(f"Campaign response v2 generation failed: {e}")
+
+    def generate_campaign_response_v3(self, user_prompt: str, campaign_description=None, history_text="") -> str:
+        """
+        Takip kodu veya takip başlığı (follow_up_campaign_code / follow_up_campaign_header) durumunda,
+        history bilgisini de kullanarak yanıt üretir.
+        """
+        client = self.initialize_openai_client()
+        rag_prompt = "Soruya cevap ver: " + user_prompt + "\n\nKampanya metin içeriği: " + str(campaign_description)
+        messages = [
+            {"role": "system", "content": history_text if history_text else "Kampanya ile ilgili sorulara cevap ver"},
+            {"role": "user", "content": rag_prompt}
+        ]
+        try:
+            response = client.chat.completions.create(
+                model=self.config.deployment_name,
+                messages=messages,
+                temperature=0,
+                max_tokens=self.max_tokens
+            )
+            response_data = json.loads(response.to_json())
+            return response_data["choices"][0]["message"]["content"].strip()
+        except Exception as e:
+            raise RuntimeError(f"Campaign response v3 generation failed: {e}")
+
+    def generate_campaign_response_v4(self, user_prompt: str, campaign_description=None, history_text="") -> str:
+        """
+        campaign_related durumu için, history bilgisini de ekleyerek yanıt üretir.
+        """
+        client = self.initialize_openai_client()
+        rag_prompt = "Soruya cevap ver: " + user_prompt + "\n\nKampanya metin içeriği: " + str(campaign_description)
+        messages = [
+            {"role": "system", "content": history_text if history_text else "Kampanya ile ilgili sorulara cevap ver"},
+            {"role": "user", "content": rag_prompt}
+        ]
+        try:
+            response = client.chat.completions.create(
+                model=self.config.deployment_name,
+                messages=messages,
+                temperature=0,
+                max_tokens=self.max_tokens
+            )
+            response_data = json.loads(response.to_json())
+            return response_data["choices"][0]["message"]["content"].strip()
+        except Exception as e:
+            raise RuntimeError(f"Campaign response v4 generation failed: {e}")
+
+    def process_user_input(self, user_input: str) -> str:
+        """
+        Kullanıcının sorusunu alır, öncelikle routing aşaması ile OpenAI API'den yönlendirir,
+        ardından routing verilerine göre uygun iş akışını çalıştırıp yanıtı oluşturur.
+        Hata durumlarında uygun mesajlar döner.
+        """
+        try:
+            routing_data = self.generate_routing_response(user_input)
+        except Exception as e:
+            return f"Routing aşamasında hata oluştu: {e}"
+        
+        # Routing'den gelen verileri ayrıştırıyoruz.
+        campaign_code = routing_data.get("campaign_code", "").strip()
+        campaign_responsible_ask = routing_data.get("campaign_responsible_ask", "").strip().upper()
+        spesific_campaign_header = routing_data.get("spesific_campaign_header", "").strip()
+        general_campaign_header = routing_data.get("general_campaign_header", "").strip()
+        follow_up_campaign_code = routing_data.get("follow_up_campaign_code", "").strip()
+        follow_up_campaign_header = routing_data.get("follow_up_campaign_header", "").strip()
+        campaign_related = routing_data.get("campaign_related", "").strip().upper()
+        pii_check_control = routing_data.get("pii_check_control", "").strip().upper()
+        
+        response = ""
+        add_to_history = True  # Varsayılan: mesaj geçmişine ekle
+        
+        try:
+            # 1) pii_check_control YES ise
+            if pii_check_control == "YES":
+                response = "sorunuzda kişisel veri tespit ettim lütfen sorunuzu kontrol ediniz."
+                add_to_history = False
+            # 2) campaign_code var ve campaign_responsible_ask YES ise
+            elif campaign_code and campaign_responsible_ask == "YES":
+                es = ElasticTextSearch()
+                campaign_responsible = es.get_responsible_name_search_code(campaign_code)
+                response = f"kampanyadan sorumlu kişi {campaign_responsible}"
+                add_to_history = False
+            # 3) campaign_code var ve campaign_responsible_ask NO ise
+            elif campaign_code and campaign_responsible_ask == "NO":
+                es = ElasticTextSearch()
+                campaign_info = es.get_best_related(campaign_code)
+                response = self.generate_campaign_response(user_input, campaign_description=campaign_info)
+            # 4) spesific_campaign_header var ve campaign_responsible_ask YES ise
+            elif spesific_campaign_header and campaign_responsible_ask == "YES":
+                es = ElasticTextSearch()
+                campaign_responsible = es.get_responsible_name_search_header(spesific_campaign_header)
+                response = f"kampanyadan sorumlu kişi {campaign_responsible}"
+                add_to_history = False
+            # 5) spesific_campaign_header var ve campaign_responsible_ask NO ise
+            elif spesific_campaign_header and campaign_responsible_ask == "NO":
+                es = ElasticTextSearch()
+                campaign_info = es.search_campaign_by_header_one_result(spesific_campaign_header)
+                response = self.generate_campaign_response_v2(user_input, campaign_description=campaign_info)
+            # 6) general_campaign_header var ise
+            elif general_campaign_header:
+                es = ElasticTextSearch()
+                campaign_info = es.search_campaign_by_header(general_campaign_header)
+                response = f"Yaptığınız genel aramaya göre aşağıdaki sonuçlar bulunmuştur: {campaign_info}"
+            # 7) follow_up_campaign_code var ise
+            elif follow_up_campaign_code:
+                es = ElasticTextSearch()
+                campaign_info = es.get_best_related(follow_up_campaign_code)
+                history_text = self.get_formatted_history()
+                response = self.generate_campaign_response_v3(user_input, campaign_description=campaign_info, history_text=history_text)
+            # 8) follow_up_campaign_header var ise
+            elif follow_up_campaign_header:
+                es = ElasticTextSearch()
+                campaign_info = es.search_campaign_by_header_one_result(follow_up_campaign_header)
+                history_text = self.get_formatted_history()
+                response = self.generate_campaign_response_v3(user_input, campaign_description=campaign_info, history_text=history_text)
+            # 9) campaign_related YES ise
+            elif campaign_related == "YES":
+                history_text = self.get_formatted_history()
+                response = self.generate_campaign_response_v4(user_input, campaign_description=None, history_text=history_text)
+            else:
+                response = "Lütfen geçerli kampanya bilgileri giriniz."
+        except Exception as e:
+            response = f"İş akışı sırasında hata oluştu: {e}"
+            add_to_history = False
+
+        # Sohbet geçmişine ekle (geçerli ise)
+        self.update_history(user_input, response, add_to_history=add_to_history)
+        return response
+
+
+# Streamlit Arayüzü: Uygulamanın ana giriş noktası
+def main():
+    st.title("🤖 Kampanya Asistanı")
+    st.warning("📌 Lütfen kampanya ile ilgili sorularınızı girin")
+
+    # Kampanya asistanı sınıfını başlatıyoruz.
+    assistant = CampaignAssistant()
+    
+    user_input = st.text_input("Lütfen kampanya ile ilgili sorularınızı girin")
+    if user_input:
+        with st.spinner("💭 Düşünüyorum..."):
+            try:
+                answer = assistant.process_user_input(user_input)
+            except Exception as e:
+                answer = f"Bir hata oluştu: {e}"
+        st.subheader("🔎 Yanıt")
+        st.write(answer)
+        st.subheader("📖 Sohbet Geçmişi")
+        st.write(assistant.get_formatted_history())
+
+
+if __name__ == "__main__":
+    main()
+
+
+
+

@@ -650,7 +650,8 @@ POWERFULL_ROUTING_PROMPT = """
    ```
 
 4. **Check for Follow-Up**  
-   - If the user’s message follows up on a **previous** campaign discussion (last 3 messages), detect the **campaign code** or **campaign header** from the history.  
+   - If the user’s message follows up on a **previous** campaign discussion (last 3 messages), detect the **campaign code** or **campaign header** from the history.
+   - If conversation history is provided, it will be appended at the bottom of this prompt. When evaluating, consider the information under that history heading to determine the follow-up details.
    - Fill `"follow_up_campaign_code"` or `"follow_up_campaign_header"` accordingly.  
 
    ```json

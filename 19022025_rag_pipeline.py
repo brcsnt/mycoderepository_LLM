@@ -1,4 +1,76 @@
 
+import json
+
+def clean_json_from_markdown(raw_json: str) -> str:
+    """
+    Markdown kod bloğu içerisinde gelen JSON verisinden 
+    kod bloğu belirteçlerini (```json ve ```) temizler.
+    """
+    raw_json = raw_json.strip()
+    # Eğer JSON, ```json ile başlıyorsa, bu kısmı kaldırıyoruz
+    if raw_json.startswith("```json"):
+        raw_json = raw_json[len("```json"):].strip()
+    # Eğer JSON, ``` ile bitiyorsa, bunu kaldırıyoruz
+    if raw_json.endswith("```"):
+        raw_json = raw_json[:-3].strip()
+    return raw_json
+
+def extract_campaign_data(json_output: str) -> dict:
+    """
+    Verilen JSON formatındaki kampanya çıktısını parse edip, 
+    beklenen tüm anahtarların (campaign_code, campaign_responsible_ask, vb.)
+    mevcut olduğunu kontrol eder ve bir sözlük olarak döndürür.
+    
+    :param json_output: Kampanya verilerini içeren JSON string.
+    :return: Çıktıda bulunan tüm kampanya verilerinin yer aldığı dict.
+    :raises ValueError: JSON formatı hatalıysa veya beklenen anahtar eksikse.
+    """
+    # Önce Markdown kod bloğu belirteçlerini temizle
+    cleaned_json = clean_json_from_markdown(json_output)
+    
+    try:
+        data = json.loads(cleaned_json)
+    except json.JSONDecodeError as e:
+        raise ValueError(f"Invalid JSON format: {e}")
+    
+    required_keys = [
+        "campaign_code",
+        "campaign_responsible_ask",
+        "spesific_campaign_header",
+        "general_campaign_header",
+        "follow_up_campaign_code",
+        "follow_up_campaign_header",
+        "campaign_related",
+        "pii_check_control"
+    ]
+    
+    # Tüm gerekli anahtarların mevcut olduğundan emin olun
+    for key in required_keys:
+        if key not in data:
+            raise ValueError(f"Missing required field in JSON response: '{key}'")
+    
+    return data
+
+# Örnek kullanım:
+json_output = """```json
+{
+  "campaign_code": "12345",
+  "campaign_responsible_ask": "",
+  "spesific_campaign_header": "",
+  "general_campaign_header": "",
+  "follow_up_campaign_code": "",
+  "follow_up_campaign_header": "",
+  "campaign_related": "",
+  "pii_check_control": ""
+}
+```"""
+
+campaign_data = extract_campaign_data(json_output)
+print(campaign_data)
+
+
+
+
 
 # MINO
 

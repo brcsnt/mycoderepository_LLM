@@ -1539,3 +1539,54 @@ def process_user_input(user_input: str) -> str:
 
 
 
+from elasticsearch import Elasticsearch
+
+class ElasticTextSearch:
+    def __init__(self, es_host='localhost', es_port=9200, index_name='campaigns'):
+        # Elasticsearch bağlantısını oluşturuyoruz.
+        self.client = Elasticsearch([{'host': es_host, 'port': es_port}])
+        self.index_name = index_name
+
+    def search_campaign_by_header(self, user_input):
+        # Dummy implementasyon: Kullanıcının girdiği kampanya kodu veya başlığına göre kampanya detaylarını döndürür.
+        return f"Elasticsearch'den alınan kampanya detayları: '{user_input}' ile eşleşen kampanya bilgileri."
+
+    def get_top_campaigns(self):
+        # Dummy implementasyon: En iyi 3 kampanyayı döndürür.
+        return "Elasticsearch: En iyi 3 kampanya bilgisi."
+
+    def get_campaign_responsible_by_code(self, campaign_code):
+        """
+        Belirtilen campaign_code değeri için exact match sorgusu yapar ve
+        dönen belgelerin campaig_responsible alanını getirir.
+        """
+        query = {
+            "query": {
+                "term": {
+                    "campaign_code": {  # Exact match için term sorgusu kullanıyoruz.
+                        "value": campaign_code
+                    }
+                }
+            },
+            "_source": ["campaig_responsible"]  # Sadece ilgili alanı getiriyoruz.
+        }
+        try:
+            response = self.client.search(index=self.index_name, body=query)
+            hits = response.get("hits", {}).get("hits", [])
+            if hits:
+                # İlk bulunan belge üzerinden campaig_responsible bilgisini döndürüyoruz.
+                return hits[0]["_source"].get("campaig_responsible", "Alan bulunamadı.")
+            else:
+                return "Belirtilen campaign_code için sonuç bulunamadı."
+        except Exception as e:
+            return f"Sorgu sırasında bir hata oluştu: {e}"
+
+
+# ElasticTextSearch örneğini oluşturuyoruz.
+es = ElasticTextSearch()
+
+# Örnek kullanım:
+campaign_code = "ABC123"  # Aranacak kampanya kodu
+result = es.get_campaign_responsible_by_code(campaign_code)
+print(result)
+

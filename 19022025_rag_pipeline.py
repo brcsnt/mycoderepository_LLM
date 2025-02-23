@@ -1428,6 +1428,113 @@ if user_input:
 
 
 
+def determine_routing_flow_type(routing_data: dict) -> int:
+    """
+    routing_data içindeki alanlara göre routing flow türünü numaralandırarak belirler.
+    Dönüş değerleri:
+      1 -> pii_check_control == "YES"
+      2 -> campaign_code var ve campaign_responsible_ask == "YES"
+      3 -> campaign_code var ve campaign_responsible_ask == "NO"
+      4 -> spesific_campaign_header var ve campaign_responsible_ask == "YES"
+      5 -> spesific_campaign_header var ve campaign_responsible_ask == "NO"
+      6 -> general_campaign_header var
+      7 -> follow_up_campaign_code var
+      8 -> follow_up_campaign_header var
+      9 -> campaign_related == "YES"
+      0 -> Hiçbiri, default durum
+    """
+    if routing_data["pii_check_control"].strip().upper() == "YES":
+        return 1
+    elif routing_data["campaign_code"].strip() and routing_data["campaign_responsible_ask"].strip().upper() == "YES":
+        return 2
+    elif routing_data["campaign_code"].strip() and routing_data["campaign_responsible_ask"].strip().upper() == "NO":
+        return 3
+    elif routing_data["spesific_campaign_header"].strip() and routing_data["campaign_responsible_ask"].strip().upper() == "YES":
+        return 4
+    elif routing_data["spesific_campaign_header"].strip() and routing_data["campaign_responsible_ask"].strip().upper() == "NO":
+        return 5
+    elif routing_data["general_campaign_header"].strip():
+        return 6
+    elif routing_data["follow_up_campaign_code"].strip():
+        return 7
+    elif routing_data["follow_up_campaign_header"].strip():
+        return 8
+    elif routing_data["campaign_related"].strip().upper() == "YES":
+        return 9
+    else:
+        return 0
+
+# Numara tabanlı routing flow'a göre aksiyon fonksiyonlarını tanımlayan sözlük:
+routing_actions = {
+    1: lambda r, user_input: ("sorunuzda kişisel veri tespit ettim lütfen sorunuzu kontrol ediniz.", False),
+    2: lambda r, user_input: (
+        f"kampanyadan sorumlu kişi {ElasticTextSearch().get_responsible_name_search_code(r['campaign_code'])}",
+        False
+    ),
+    3: lambda r, user_input: (
+        generate_campaign_response(
+            user_input,
+            campaign_description=ElasticTextSearch().get_best_related(r["campaign_code"])
+        ),
+        True
+    ),
+    4: lambda r, user_input: (
+        f"kampanyadan sorumlu kişi {ElasticTextSearch().get_responsible_name_search_header(r['spesific_campaign_header'])}",
+        False
+    ),
+    5: lambda r, user_input: (
+        generate_campaign_response_v2(
+            user_input,
+            campaign_description=ElasticTextSearch().search_campaign_by_header_one_result(r["spesific_campaign_header"])
+        ),
+        True
+    ),
+    6: lambda r, user_input: (
+        f"Yaptığınız genel aramaya göre aşağıdaki sonuçlar bulunmuştur: {ElasticTextSearch().search_campaign_by_header(r['general_campaign_header'])}",
+        True
+    ),
+    7: lambda r, user_input: (
+        generate_campaign_response_v3(
+            user_input,
+            system_prompt=get_formatted_history(),
+            campaign_description=ElasticTextSearch().get_best_related(r["follow_up_campaign_code"])
+        ),
+        True
+    ),
+    8: lambda r, user_input: (
+        generate_campaign_response_v3(
+            user_input,
+            system_prompt=get_formatted_history(),
+            campaign_description=ElasticTextSearch().search_campaign_by_header_one_result(r["follow_up_campaign_header"])
+        ),
+        True
+    ),
+    9: lambda r, user_input: (
+        generate_campaign_response_v4(
+            user_input,
+            system_prompt=get_formatted_history(),
+            campaign_description=None
+        ),
+        True
+    ),
+    0: lambda r, user_input: ("Lütfen geçerli kampanya bilgileri giriniz.", True)
+}
+
+
+def process_user_input(user_input: str) -> str:
+    """
+    Kullanıcının sorusunu önce routing response üzerinden yönlendirir,
+    ardından routing flow tür numarasına göre doğru aksiyonu çalıştırır.
+    """
+    routing_data = generate_routing_response(user_input, system_prompt=POWERFULL_ROUTING_PROMPT)
+    
+    flow_type = determine_routing_flow_type(routing_data)
+    response, add_to_history = routing_actions.get(flow_type, routing_actions[0])(routing_data, user_input)
+    
+    if add_to_history:
+        update_history(user_input, response)
+    
+    return response
 
 
 

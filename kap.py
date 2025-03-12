@@ -85,3 +85,94 @@ df = pd.DataFrame(records)
 # DataFrame'i görüntüleme
 print(df)
 
+
+
+
+import pdfplumber
+
+with pdfplumber.open("KAP.pdf") as pdf:
+    for i, page in enumerate(pdf.pages, start=1):
+        text = page.extract_text()
+        print(f"Sayfa {i} metni:\n{text}\n{'-'*40}\n")
+        # İlk sayfayı kontrol etmek için döngüden çıkabilirsiniz
+        if i == 1:
+            break
+
+
+
+
+
+
+
+
+
+
+
+
+import pdfplumber
+import pandas as pd
+
+# PDF'den tüm metni çekelim
+all_text = ""
+with pdfplumber.open("KAP.pdf") as pdf:
+    for page in pdf.pages:
+        page_text = page.extract_text()
+        if page_text:
+            all_text += page_text + "\n"
+
+# Metni satırlara ayıralım
+lines = all_text.splitlines()
+
+# Tablo verilerini içerecek liste
+data = []
+i = 0
+while i < len(lines):
+    line = lines[i].strip()
+    parts = line.split()
+    # Satırın ilk elemanı sayı ise ve ikinci eleman tarih formatına uygun ise (örneğin "03.01.24")
+    if len(parts) >= 3 and parts[0].isdigit() and len(parts[1])==8 and ":" in parts[2]:
+        # İlk satır: Bildirim No, Tarih, Saat
+        bildirim_no = parts[0]
+        tarih = parts[1]
+        saat = parts[2]
+        # İkinci satır: Firma ve Rapor Tipi (bu satırda genellikle her ikisi de bulunuyor)
+        if i+1 < len(lines):
+            firma_ve_rapor = lines[i+1].strip()
+        else:
+            firma_ve_rapor = ""
+        # Eğer rapor tipi sabit bir ifade ise (örneğin "DG Değerleme Raporu") bu satırın sonunda yer alıyorsa,
+        # onu ayırmak için örneğin şu şekilde bir kontrol yapabilirsiniz:
+        rapor_tipi = ""
+        if "DG Değerleme Raporu" in firma_ve_rapor:
+            rapor_tipi = "DG Değerleme Raporu"
+            # Firma kısmını, rapor tipini çıkartarak elde edebiliriz
+            firma = firma_ve_rapor.replace("DG Değerleme Raporu", "").strip()
+        else:
+            firma = firma_ve_rapor
+        # Üçüncü satırdan itibaren detayları toplayalım. Detaylar, "-" ya da boş satır görünceye kadar devam ediyor.
+        detay = ""
+        j = i+2
+        while j < len(lines):
+            current_line = lines[j].strip()
+            if current_line == "-" or current_line == "":
+                break
+            detay += current_line + " "
+            j += 1
+        detay = detay.strip()
+        # Bulunan satırı veri listesine ekleyelim
+        data.append({
+            "Bildirim No": bildirim_no,
+            "Tarih": tarih,
+            "Saat": saat,
+            "Firma": firma,
+            "Rapor Tipi": rapor_tipi,
+            "Detay": detay
+        })
+        # Bir sonraki bildirime geçmek için index'i "-" bulunan satırın sonrasına ayarla
+        i = j + 1
+    else:
+        i += 1
+
+# Verilerden DataFrame oluşturalım
+df = pd.DataFrame(data)
+print(df)

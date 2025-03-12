@@ -1,35 +1,24 @@
+import pdfplumber
 import pandas as pd
 
-# Kayıtların tamamını içeren çok satırlı veriyi buraya yapıştırın.
-raw_data = """\
-388	03.01.24 23:26	RYGYO	REYSAŞ GAYRİMENKUL YATIRIM ORTAKLIĞI A.Ş.	DG	Değerleme Raporu	Konutlar ve Dükkanlar (İstanbul - Sancaktepe - Samandıra - 6650 - 17) F 2023 Yılsonu Değerleme Raporu	-	Ekli Dosya Mevcut
-387	03.01.24 23:26	RYGYO	REYSAŞ GAYRİMENKUL YATIRIM ORTAKLIĞI A.Ş.	DG	Değerleme Raporu	Depo (Sakarya - Arifiye - Yukarıkirezce - 2587 - 46) 2023 Yılsonu Değerleme Raporu	-	Ekli Dosya Mevcut
-... (diğer kayıtlar)
-1	03.01.24 08:05	PGSUS	PEGASUS HAVA TAŞIMACILIĞI A.Ş.	ÖDA	Finansal Duran Varlık Edinimi	Yurt Dışında Bağlı Şirket Kuruluşu	-	"""
+all_tables = []  # Tüm sayfalardaki tabloları saklamak için liste
 
-# Her satırı ayırıyoruz
-rows = raw_data.strip().split("\n")
+with pdfplumber.open("KAP.pdf") as pdf:
+    for i, page in enumerate(pdf.pages):
+        # Her sayfadaki tabloları çıkarıyoruz
+        tables = page.extract_tables()
+        for table in tables:
+            # Eğer tablo başlık içeriyorsa, ilk satırı kolon isimleri olarak kullanıyoruz
+            if len(table) > 1:
+                df_table = pd.DataFrame(table[1:], columns=table[0])
+                df_table['Sayfa'] = i + 1  # Hangi sayfadan geldiğini belirtiyoruz
+                all_tables.append(df_table)
 
-# Satırlardaki verileri sütunlarına göre bölüp, kayıt sözlüklerini oluşturuyoruz.
-records = []
-for row in rows:
-    # Sütunlar tab (\t) karakteri ile ayrılmıştır.
-    cols = row.split("\t")
-    record = {
-        "Sıra": cols[0].strip() if len(cols) > 0 else "",
-        "Tarih": cols[1].strip() if len(cols) > 1 else "",
-        "Kod": cols[2].strip() if len(cols) > 2 else "",
-        "Şirket/Fon": cols[3].strip() if len(cols) > 3 else "",
-        "Tip": cols[4].strip() if len(cols) > 4 else "",
-        "İşlem": cols[5].strip() if len(cols) > 5 else "",
-        "Açıklama": cols[6].strip() if len(cols) > 6 else "",
-        "Ek": cols[7].strip() if len(cols) > 7 else "",
-        "Ekli Dosya": cols[8].strip() if len(cols) > 8 else ""
-    }
-    records.append(record)
-
-# DataFrame oluşturuluyor
-df = pd.DataFrame(records)
-
-# DataFrame'in ilk birkaç satırını görüntüleyelim
-print(df.head())
+# Eğer herhangi bir tablo bulunduysa, tüm tabloları birleştiriyoruz
+if all_tables:
+    final_df = pd.concat(all_tables, ignore_index=True)
+    excel_file = "KAP_data.xlsx"
+    final_df.to_excel(excel_file, index=False)
+    print(f"Excel dosyası '{excel_file}' oluşturuldu.")
+else:
+    print("PDF dosyasında tablo bulunamadı.")

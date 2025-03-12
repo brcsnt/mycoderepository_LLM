@@ -176,3 +176,86 @@ while i < len(lines):
 # Verilerden DataFrame oluşturalım
 df = pd.DataFrame(data)
 print(df)
+
+
+
+
+
+
+
+
+
+
+import pdfplumber
+import re
+import json
+
+# PDF içerisindeki kayıtların başlangıç yapısına uygun örnek bir regex ve satır işleme mantığı
+def parse_records(text):
+    lines = text.splitlines()
+    records = []
+    i = 0
+    while i < len(lines):
+        line = lines[i].strip()
+        # Bildirim başlangıcı: ilk satırda bildirimin numarası, tarih ve saat yer alıyor.
+        parts = line.split()
+        if len(parts) >= 3 and parts[0].isdigit() and len(parts[1]) >= 7 and ":" in parts[2]:
+            bildirim_no = parts[0]
+            tarih = parts[1]
+            saat = parts[2]
+            # İkinci satır: Firma ve rapor tipinin yer aldığı satır
+            firma_ve_rapor = lines[i+1].strip() if i+1 < len(lines) else ""
+            # Örneğin, "DG Değerleme Raporu" sabit ifadeyi kullanarak ayırabiliriz
+            rapor_tipi = ""
+            if "DG Değerleme" in firma_ve_rapor:
+                rapor_tipi = "DG Değerleme Raporu"
+                firma = firma_ve_rapor.replace("DG Değerleme", "").replace("Raporu", "").strip()
+            else:
+                firma = firma_ve_rapor
+            # Üçüncü satırdan başlayarak detaylar "-" veya boş satır görünene kadar toplanıyor
+            detay_lines = []
+            j = i + 2
+            while j < len(lines):
+                current_line = lines[j].strip()
+                if current_line == "-" or current_line == "":
+                    break
+                detay_lines.append(current_line)
+                j += 1
+            detay = " ".join(detay_lines).strip()
+            # Kayıtları listeye ekle
+            records.append({
+                "Bildirim No": int(bildirim_no),
+                "Tarih": tarih,
+                "Saat": saat,
+                "Firma": firma,
+                "Rapor Tipi": rapor_tipi,
+                "Detay": detay
+            })
+            i = j + 1
+        else:
+            i += 1
+    return records
+
+# PDF dosyasını sayfa sayfa okuyarak tüm metni elde ediyoruz
+all_text = ""
+with pdfplumber.open("KAP.pdf") as pdf:
+    for page in pdf.pages:
+        page_text = page.extract_text()
+        if page_text:
+            all_text += page_text + "\n"
+
+# Metni işleyerek kayıtları elde ediyoruz
+records = parse_records(all_text)
+
+# Kayıtların toplam sayısı (örneğin KAP.pdf'de 388 kayıt olduğu belirtilmiş)
+print("Toplam kayıt sayısı:", len(records))
+
+# Çıktıyı JSON dosyasına yazıyoruz (veya direkt olarak JSON formatında da döndürebilirsiniz)
+with open("all_records.json", "w", encoding="utf-8") as f:
+    json.dump(records, f, ensure_ascii=False, indent=4)
+
+# Örnek çıktı olarak ilk 4 kaydı yazdırıyoruz:
+import pprint
+pp = pprint.PrettyPrinter(indent=4)
+pp.pprint(records[:4])
+

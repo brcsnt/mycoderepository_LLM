@@ -50,3 +50,38 @@ df = pd.DataFrame(data)
 excel_file = "KAP_data_pypdf.xlsx"
 df.to_excel(excel_file, index=False)
 print(f"Excel dosyası '{excel_file}' oluşturuldu.")
+
+
+
+
+import pdfplumber
+import re
+import pandas as pd
+
+# PDF'deki her bildirimi yakalamak için örnek regex (dosyanın yapısına göre uyarlanmalı)
+# Bu örnekte, bildirimin "bildirim no", "tarih", "saat", "firma", "rapor tipi" ve "detay" kısımlarını ayırmayı hedefliyoruz.
+pattern = re.compile(
+    r"(?P<BildirimNo>\d+)\s+(?P<Tarih>\d{2}\.\d{2}\.\d{2})\s+(?P<Saat>\d{2}:\d{2})\s+(?P<Firma>(?:[A-ZÇĞİÖŞÜa-zçğıöşü0-9\s\.\-&/]+?))\s+(?P<RaporTipi>(?:DG Değerleme Raporu|ÖDA|Diğer Rapor Tipleri))\s+(?P<Detay>.*?)(?=\n\d+\s+\d{2}\.\d{2}\.\d{2}|\Z)",
+    re.DOTALL
+)
+
+records = []
+
+with pdfplumber.open("KAP.pdf") as pdf:
+    for page in pdf.pages:
+        text = page.extract_text()
+        if not text:
+            continue
+        # Sayfadaki her eşleşmeyi bul
+        for match in pattern.finditer(text):
+            record = match.groupdict()
+            # Gerekiyorsa alanlardan baştaki ve sondaki boşlukları temizle
+            record = {k: v.strip() for k, v in record.items()}
+            records.append(record)
+
+# DataFrame oluşturma
+df = pd.DataFrame(records)
+
+# DataFrame'i görüntüleme
+print(df)
+

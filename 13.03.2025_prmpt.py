@@ -23,3 +23,19 @@ Below are the updated sections for your prompt in English. These updates focus s
 ---
 
 These revisions ensure that the system determines whether a query is general or specific based solely on the campaign reference within the text, independent of any time-related details.
+
+
+
+
+{
+  "campaign_code": "",
+  "campaign_responsible_ask": "NO",
+  "specific_campaign_header": "",
+  "general_campaign_header": "Market kampanyaları",
+  "follow_up_campaign_code": "",
+  "follow_up_campaign_header": "",
+  "follow_up_campaign_responsible": "",
+  "campaign_related": "",
+  "campaign_time": "",
+  "pii_check_violate": "NO"
+}

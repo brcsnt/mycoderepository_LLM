@@ -27,6 +27,124 @@ These revisions ensure that the system determines whether a query is general or 
 
 
 
+
+
+Aşağıda, spesifik kampanya sorguları ve genel kampanya sorguları için çok daha çeşitli few-shot örnekleri yer almaktadır. Bu örneklerde, sistemin yalnızca kullanıcının metin ifadesine dayanarak ayrım yapması hedeflenmektedir.
+
+---
+
+### **Spesifik Kampanya Sorguları**
+
+#### **Örnek 1**
+**Kullanıcı Girdisi:**  
+> "Migros Ramazan kampanyası hakkında detaylı bilgi verir misiniz?"
+
+**Çıktı:**
+```json
+{
+  "campaign_code": "",
+  "campaign_responsible_ask": "NO",
+  "specific_campaign_header": "Migros Ramazan",
+  "general_campaign_header": "",
+  "follow_up_campaign_code": "",
+  "follow_up_campaign_header": "",
+  "follow_up_campaign_responsible": "",
+  "campaign_related": "",
+  "campaign_time": "",
+  "pii_check_violate": "NO"
+}
+```
+
+#### **Örnek 2**
+**Kullanıcı Girdisi:**  
+> "A101 Black Friday kampanyası ne zaman başlayacak?"
+
+**Çıktı:**
+```json
+{
+  "campaign_code": "",
+  "campaign_responsible_ask": "NO",
+  "specific_campaign_header": "A101 Black Friday",
+  "general_campaign_header": "",
+  "follow_up_campaign_code": "",
+  "follow_up_campaign_header": "",
+  "follow_up_campaign_responsible": "",
+  "campaign_related": "",
+  "campaign_time": "",
+  "pii_check_violate": "NO"
+}
+```
+
+#### **Örnek 3**
+**Kullanıcı Girdisi:**  
+> "Ocak ayında Kipa Yılbaşı kampanyası neler içeriyor?"
+
+**Çıktı:**
+```json
+{
+  "campaign_code": "",
+  "campaign_responsible_ask": "NO",
+  "specific_campaign_header": "Kipa Yılbaşı",
+  "general_campaign_header": "",
+  "follow_up_campaign_code": "",
+  "follow_up_campaign_header": "",
+  "follow_up_campaign_responsible": "",
+  "campaign_related": "",
+  "campaign_time": "",
+  "pii_check_violate": "NO"
+}
+```
+
+---
+
+### **Genel Kampanya Sorguları**
+
+#### **Örnek 4**
+**Kullanıcı Girdisi:**  
+> "Migros kampanyaları neler var?"
+
+**Çıktı:**
+```json
+{
+  "campaign_code": "",
+  "campaign_responsible_ask": "NO",
+  "specific_campaign_header": "",
+  "general_campaign_header": "Migros kampanyaları",
+  "follow_up_campaign_code": "",
+  "follow_up_campaign_header": "",
+  "follow_up_campaign_responsible": "",
+  "campaign_related": "",
+  "campaign_time": "",
+  "pii_check_violate": "NO"
+}
+```
+
+#### **Örnek 5**
+**Kullanıcı Girdisi:**  
+> "Boyner kampanyaları güncel durumda mı?"
+
+**Çıktı:**
+```json
+{
+  "campaign_code": "",
+  "campaign_responsible_ask": "NO",
+  "specific_campaign_header": "",
+  "general_campaign_header": "Boyner kampanyaları",
+  "follow_up_campaign_code": "",
+  "follow_up_campaign_header": "",
+  "follow_up_campaign_responsible": "",
+  "campaign_related": "",
+  "campaign_time": "",
+  "pii_check_violate": "NO"
+}
+```
+
+#### **Örnek 6**
+**Kullanıcı Girdisi:**  
+> "Market kampanyaları hakkında bilgi verebilir misin?"
+
+**Çıktı:**
+```json
 {
   "campaign_code": "",
   "campaign_responsible_ask": "NO",
@@ -39,3 +157,8 @@ These revisions ensure that the system determines whether a query is general or 
   "campaign_time": "",
   "pii_check_violate": "NO"
 }
+```
+
+---
+
+Bu örnekler, sistemin yalnızca kullanıcının sorgusundaki kampanya referansına bakarak spesifik mi yoksa genel mi olduğunu doğru şekilde belirlemesini sağlayacak şekilde çeşitlendirilmiştir. Zaman ifadesi varsa, bu ek bilgi olarak işlenecek, ancak ana sınıflandırma tamamen kampanya ifadesinin belirginliğine dayanacaktır.

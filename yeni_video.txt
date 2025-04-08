@@ -1,0 +1,27 @@
+Başlık:  
+**White Goods Bonus Campaign**
+
+Arama:  
+Let's begin by looking up a specific campaign using its official title. For example, you can start by clearly asking the bot:
+
+*"Could you please provide details about the White Goods Bonus Campaign?"*
+
+The bot will promptly return a concise and informative summary, covering the campaign’s main features and benefits.
+
+Next, let's continue by checking when this campaign takes place. To do this, you could ask:
+
+*"What are the valid dates for this campaign?"*
+
+The bot will quickly respond by giving you the exact start and end dates, helping you plan accordingly.
+
+Then, if you'd like to get an idea of how much bonus you can earn based on your spending, ask something detailed, such as:
+
+*"How much bonus can a customer earn when spending 5,000 Turkish Lira?"*
+
+The bot will clearly provide a precise calculation, making it easy for you to see exactly what you’ll earn.
+
+Finally, if you decide to participate, the next logical question might be:
+
+*"How can I participate in this campaign?"*
+
+The bot will clearly walk you through each step of the participation process, ensuring you have all the information needed to take advantage of the campaign.

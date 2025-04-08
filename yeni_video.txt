@@ -1,27 +1,23 @@
-Başlık:  
-**White Goods Bonus Campaign**
+Let's begin by looking up a specific campaign using its official title. For example, you might clearly ask:
 
-Arama:  
-Let's begin by looking up a specific campaign using its official title. For example, you can start by clearly asking the bot:
+"Could you please provide details about the White Goods Bonus Campaign?"
 
-*"Could you please provide details about the White Goods Bonus Campaign?"*
+The bot will promptly deliver a concise yet detailed summary, highlighting the campaign’s key features and advantages.
 
-The bot will promptly return a concise and informative summary, covering the campaign’s main features and benefits.
+Next, let's continue by checking the campaign dates. You could ask Wisdom Bot Plus directly:
 
-Next, let's continue by checking when this campaign takes place. To do this, you could ask:
+"What are the valid dates for this campaign?"
 
-*"What are the valid dates for this campaign?"*
+The bot will quickly respond, clearly stating the exact start and end dates, helping you plan your purchases accordingly.
 
-The bot will quickly respond by giving you the exact start and end dates, helping you plan accordingly.
+Then, to understand exactly how much bonus you'll earn, you might ask a specific question to Wisdom Bot Plus, such as:
 
-Then, if you'd like to get an idea of how much bonus you can earn based on your spending, ask something detailed, such as:
+"How much bonus can a customer earn when spending 5,000 Turkish Lira?"
 
-*"How much bonus can a customer earn when spending 5,000 Turkish Lira?"*
+You'll instantly receive a clear and accurate calculation of your bonus.
 
-The bot will clearly provide a precise calculation, making it easy for you to see exactly what you’ll earn.
+Finally, if you're interested in participating, simply ask:
 
-Finally, if you decide to participate, the next logical question might be:
+"How can I participate in this campaign?"
 
-*"How can I participate in this campaign?"*
-
-The bot will clearly walk you through each step of the participation process, ensuring you have all the information needed to take advantage of the campaign.
+Wisdom Bot Plus will guide you through each step, making the participation process easy and straightforward.

@@ -1,0 +1,178 @@
+Below is an English explanation and diverse few-shot examples (following the previous format) to help you clearly differentiate between general and specific campaign inquiries solely from the user's query.
+
+---
+
+### Key Points for Differentiation
+
+1. **Specific Campaign (specific_campaign_header):**
+   - **Definition:** The inquiry explicitly mentions a distinct, unique campaign name. For example, if the query specifies a campaign like "Migros Ramazan campaign" or "A101 Black Friday campaign", this should be classified as a specific campaign inquiry.
+   - **Determining Feature:** The text includes a clear campaign title that indicates a single, well-defined campaign.
+   - **Example Sentence:**  
+     "Can you provide details about the A101 Black Friday campaign?"
+   - **Expected JSON Output:**  
+     ```json
+     {
+       "campaign_code": "",
+       "campaign_responsible_ask": "NO",
+       "specific_campaign_header": "A101 Black Friday",
+       "general_campaign_header": "",
+       "follow_up_campaign_code": "",
+       "follow_up_campaign_header": "",
+       "follow_up_campaign_responsible": "",
+       "campaign_related": "",
+       "campaign_time": "",
+       "pii_check_violate": "NO"
+     }
+     ```
+
+2. **General Campaign (general_campaign_header):**
+   - **Definition:** The inquiry refers to campaigns in a broad or generic sense. This occurs when the query mentions the brand or general campaign phrases (such as "Migros campaigns", "Boyner campaigns", "market campaigns") without pinpointing a specific campaign.
+   - **Determining Feature:** The query uses a generic reference to campaigns rather than naming a specific campaign.
+   - **Example Sentence:**  
+     "What are the current Migros campaigns?"
+   - **Expected JSON Output:**  
+     ```json
+     {
+       "campaign_code": "",
+       "campaign_responsible_ask": "NO",
+       "specific_campaign_header": "",
+       "general_campaign_header": "Migros campaigns",
+       "follow_up_campaign_code": "",
+       "follow_up_campaign_header": "",
+       "follow_up_campaign_responsible": "",
+       "campaign_related": "",
+       "campaign_time": "",
+       "pii_check_violate": "NO"
+     }
+     ```
+
+---
+
+### Additional Guidelines
+
+- **Primary Criterion:**  
+  Analyze the user's text to see if it contains a specific campaign identifier. If it does, use the **specific_campaign_header** field. Otherwise, if the text only refers to general campaign concepts or brand-related campaigns, use the **general_campaign_header** field.
+
+- **Time Information:**  
+  Although time references (if present) should be processed as additional data (e.g., updating the **campaign_time** field), they should not influence the primary classification between a specific or general campaign inquiry.
+
+- **Ambiguous Cases:**  
+  If the campaign name is not clearly associated with a specific brand or if the query is ambiguous, try to use contextual clues from the text. When in doubt, you may classify the inquiry as general, and highlight the ambiguity so that further clarification can be sought if needed.
+
+---
+
+### Diverse Few-Shot Examples
+
+#### **Example 1: Specific Campaign Inquiry (Explicit Campaign Name)**
+**User Input:**  
+> "Can you provide details about the Migros Ramazan campaign?"
+
+**Output:**
+```json
+{
+  "campaign_code": "",
+  "campaign_responsible_ask": "NO",
+  "specific_campaign_header": "Migros Ramazan",
+  "general_campaign_header": "",
+  "follow_up_campaign_code": "",
+  "follow_up_campaign_header": "",
+  "follow_up_campaign_responsible": "",
+  "campaign_related": "",
+  "campaign_time": "",
+  "pii_check_violate": "NO"
+}
+```
+
+---
+
+#### **Example 2: Specific Campaign Inquiry with Additional Context**
+**User Input:**  
+> "What does the A101 Black Friday campaign include in terms of offers?"
+
+**Output:**
+```json
+{
+  "campaign_code": "",
+  "campaign_responsible_ask": "NO",
+  "specific_campaign_header": "A101 Black Friday",
+  "general_campaign_header": "",
+  "follow_up_campaign_code": "",
+  "follow_up_campaign_header": "",
+  "follow_up_campaign_responsible": "",
+  "campaign_related": "",
+  "campaign_time": "",
+  "pii_check_violate": "NO"
+}
+```
+
+---
+
+#### **Example 3: General Campaign Inquiry (Broad Reference)**
+**User Input:**  
+> "What are the current Boyner campaigns?"
+
+**Output:**
+```json
+{
+  "campaign_code": "",
+  "campaign_responsible_ask": "NO",
+  "specific_campaign_header": "",
+  "general_campaign_header": "Boyner campaigns",
+  "follow_up_campaign_code": "",
+  "follow_up_campaign_header": "",
+  "follow_up_campaign_responsible": "",
+  "campaign_related": "",
+  "campaign_time": "",
+  "pii_check_violate": "NO"
+}
+```
+
+---
+
+#### **Example 4: General Campaign Inquiry (Brand-Level Inquiry)**
+**User Input:**  
+> "Can you list the market campaigns available at the moment?"
+
+**Output:**
+```json
+{
+  "campaign_code": "",
+  "campaign_responsible_ask": "NO",
+  "specific_campaign_header": "",
+  "general_campaign_header": "Market campaigns",
+  "follow_up_campaign_code": "",
+  "follow_up_campaign_header": "",
+  "follow_up_campaign_responsible": "",
+  "campaign_related": "",
+  "campaign_time": "",
+  "pii_check_violate": "NO"
+}
+```
+
+---
+
+#### **Example 5: Ambiguous Case (Insufficient Specificity)**
+**User Input:**  
+> "I want to know more about the Ramadan campaign details."
+
+**Guidance & Output:**  
+If the context does not clarify which brand or specific campaign is being referred to, treat the inquiry as general.  
+
+```json
+{
+  "campaign_code": "",
+  "campaign_responsible_ask": "NO",
+  "specific_campaign_header": "",
+  "general_campaign_header": "Ramadan campaign",
+  "follow_up_campaign_code": "",
+  "follow_up_campaign_header": "",
+  "follow_up_campaign_responsible": "",
+  "campaign_related": "",
+  "campaign_time": "",
+  "pii_check_violate": "NO"
+}
+```
+
+---
+
+These examples and guidelines should help ensure that your system correctly distinguishes between general and specific campaign inquiries by focusing solely on the user's text, without allowing time references to skew the classification.

@@ -171,3 +171,66 @@ Bu yeni alanı doldurmak için `Analysis Rules` (Analiz Kuralları) bölümüne 
       "follow_up_fon_kodu": null
     }
     ```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Harika bir noktaya değindiniz. Bu, kullanıcının sadece fonu belirterek (örn: "AFA fonu") genel bir bilgi istediği senaryoyu ele almak için çok önemli bir kural.
+
+Ancak, bu kuralı uygularken RAG sisteminin verimliliğini korumak adına küçük ama önemli bir iyileştirme önereceğim.
+
+**Öneriniz:** Fon kodu/adı bulunduğunda `istenen_kolonlar` listesini `["Metin"]` olarak ayarlamak.
+
+**İyileştirilmiş Yaklaşım:** Tek bir büyük `"Metin"` alanı yerine, bir fonun en önemli ve karşılaştırılabilir alanlarını içeren **varsayılan bir kolon listesi** kullanmak, nihai cevabı üretecek olan LLM için çok daha etkilidir. Model, yapılandırılmış veriyi (`Risk Profili: 6`, `Yönetim Ücreti: %2.5` gibi) tek bir uzun metin paragrafından daha iyi anlar ve daha doğru cevaplar üretir.
+
+Bu mantıkla, "Special Case Rules" bölümünü, isteğinizi karşılayacak ve bu iyileştirmeyi içerecek şekilde yeniden düzenledim. Bu yeni kural, "kullanıcı spesifik bir alan sormadıysa, o zaman varsayılan genel bilgileri getir" mantığıyla çalışır.
+
+---
+
+-   **Special Case Rules:**
+
+    -   **Implicit General Query (Varsayılan Genel Sorgu):** This rule applies **if** the `fon_kodlari` or `fon_adlari` lists have been populated, **but** the `istenen_kolonlar` list is still **empty** (meaning the user mentioned a fund but did not ask for a specific field like 'risk' or 'getiri'). This indicates a general information request. In this case, automatically populate the `istenen_kolonlar` list with the following default set of a fund's most important attributes:
+        `["Fon_Adi", "Fon_Kodu", "Strateji", "Risk_Getiri_Profili", "Yillik_Yonetim_Ucreti", "Vergilendirme"]`
+
+    -   **Comparison Query:** This rule applies if the `fon_kodlari` list contains more than one code.
+        -   **1. Check for Specific Fields:** First, analyze the user's query for keywords corresponding to specific fields (like `risk`, `getiri`, `vergi`, `yönetim ücreti`). If one or more specific fields are mentioned, the `istenen_kolonlar` list should **only** contain the columns for those requested fields.
+        -   **2. Fallback to General Comparison:** If the query is a general comparison (using words like `farkı ne`, `kıyasla`, `karşılaştır`) and **no specific field keywords are found**, then use the following default list for a comprehensive comparison: `["Fon_Adi", "Strateji", "Risk_Getiri_Profili", "Yillik_Yonetim_Ucreti", "Fon_Getirisi", "Vergilendirme"]`
+
+### Bu Değişiklik Pratikte Nasıl Çalışır?
+
+**Senaryo 1: Kullanıcı sadece fonu belirtiyor.**
+* **Kullanıcı Sorusu:** `"AFA fonu"`
+* **Prompt'un İşleyişi:**
+    1.  `fon_kodlari` listesi `["AFA"]` olarak doldurulur.
+    2.  Spesifik bir alan anahtar kelimesi (`risk`, `getiri` vb.) bulunmadığı için `istenen_kolonlar` listesi boş kalır.
+    3.  **"Implicit General Query"** kuralı tetiklenir.
+    4.  `istenen_kolonlar` listesi otomatik olarak varsayılan genel bilgi setiyle doldurulur.
+* **Sonuç:** `istenen_kolonlar: ["Fon_Adi", "Fon_Kodu", "Strateji", ...]`
+
+**Senaryo 2: Kullanıcı spesifik bir alan soruyor.**
+* **Kullanıcı Sorusu:** `"AFA fonunun riski"`
+* **Prompt'un İşleyişi:**
+    1.  `fon_kodlari` listesi `["AFA"]` olarak doldurulur.
+    2.  `risk` anahtar kelimesi bulunur ve `istenen_kolonlar` listesi `["Risk_Getiri_Profili"]` olarak doldurulur.
+    3.  `istenen_kolonlar` listesi boş olmadığı için "Implicit General Query" kuralı **tetiklenmez**.
+* **Sonuç:** `istenen_kolonlar: ["Risk_Getiri_Profili"]`
+
+Bu yapı, sisteminizin hem spesifik soruları doğru anlamasını hem de genel bilgi taleplerini akıllıca karşılamasını sağlar.

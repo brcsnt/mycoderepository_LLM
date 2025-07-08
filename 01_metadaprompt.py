@@ -76,3 +76,30 @@ A single field's complete information is often fragmented. You must intelligentl
 
   * **This is a critical rule.** You **MUST NOT** extract, include, or refer to any information from sections explicitly titled **"Önemli Notlar"** or **"Yasal Uyarı"**.
   * Your entire extraction process must be confined to the main descriptive pages of the brochure (typically the first 1-2 pages containing the summary information, strategy, and investor profile). Ignore content on the final page(s) containing legal disclaimers, detailed multi-period tax tables, or contact information.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Elbette, isteğiniz doğrultusunda, karşılaştırma mantığını daha da netleştirecek şekilde ilgili bölümü yeniden yazıyorum.
+
+Bu yeni kural, modelin **öncelikle spesifik bir alan karşılaştırması** olup olmadığını kontrol etmesini, eğer yoksa **genel bir karşılaştırma** için varsayılan alanları kullanmasını sağlar. Kullanıcının önerdiği "Metin" alanı yerine, yapılandırılmış bir karşılaştırma için en önemli varsayılan alanları getirmek, nihai cevap kalitesini artıracaktır.
+
+---
+
+-   **Special Case Rules:**
+
+    -   **General Information Query:** If the user asks a general question about a single fund (e.g., "hakkında bilgi", "detaylar") and does not specify any fields, use the following default list: `["Fon_Adi", "Strateji", "Risk_Getiri_Profili", "Yillik_Yonetim_Ucreti", "Fon_Buyuklugu"]`
+
+    -   **Comparison Query:** This rule applies if the `fon_kodlari` list contains more than one code.
+        -   **1. Check for Specific Fields:** First, analyze the user's query for keywords corresponding to specific fields (like `risk`, `getiri`, `vergi`, `yönetim ücreti`). If one or more specific fields are mentioned, the `istenen_kolonlar` list should **only** contain the columns for those requested fields.
+        -   **2. Fallback to General Comparison:** If the query is a general comparison (using words like `farkı ne`, `kıyasla`, `karşılaştır`) and **no specific field keywords are found**, then use the following default list for a comprehensive comparison: `["Fon_Adi", "Strateji", "Risk_Getiri_Profili", "Yillik_Yonetim_Ucreti", "Fon_Getirisi", "Vergilendirme"]`

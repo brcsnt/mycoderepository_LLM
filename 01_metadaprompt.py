@@ -234,3 +234,66 @@ Bu mantıkla, "Special Case Rules" bölümünü, isteğinizi karşılayacak ve b
 * **Sonuç:** `istenen_kolonlar: ["Risk_Getiri_Profili"]`
 
 Bu yapı, sisteminizin hem spesifik soruları doğru anlamasını hem de genel bilgi taleplerini akıllıca karşılamasını sağlar.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Elbette, paylaştığınız broşürden ve isteğinizden yola çıkarak "Fonun Halka Arz Tarihi" ve "Fonun Karşılaştırma Ölçütü" için sistem prompt'unuza eklemeniz gereken yeni kuralları aşağıda oluşturuyorum.
+
+Bu yeni kuralları, prompt'unuzdaki `Rules for the istenen_kolonlar Field` başlığı altına, diğer alan tanımlamalarının yanına ekleyebilirsiniz.
+
+-----
+
+### Eklenecek Yeni Kurallar
+
+  - **`Halka_Arz_Tarihi`**
+
+      - **Description:** The date when the fund was first publicly offered (IPO date), indicating the fund's age.
+      - **Keywords:** `halka arz tarihi`, `kuruluş tarihi`, `ne zaman kuruldu`, `ne zamandır var`, `ilk işlem tarihi`, `piyasaya çıkış tarihi`
+
+  - **`Karsilastirma_Olcutu`**
+
+      - **Description:** The benchmark index or a mix of indices against which the fund's performance is measured. It serves as a reference point to evaluate the fund's success.
+      - **Keywords:** `karşılaştırma ölçütü`, `benchmark`, `performans ölçütü`, `kıyaslama ölçütü`, `neye göre ölçülüyor`, `endeksi ne`
+
+### Güncellenmiş Kural Bloğu Örneği
+
+Bu yeni kuralları eklediğinizde, `4.4. Rules for the istenen_kolonlar Field` bölümünüzün bir kısmı aşağıdaki gibi görünecektir:
+
+```
+-   **Vergilendirme**
+    -   **Description:** Information on the taxation of gains from the fund, such as withholding tax (stopaj) rates.
+    -   **Keywords:** `vergilendirme`, `vergi`, `stopaj`, `vergi kesintisi`, `gelir vergisi`, `kazanç vergisi`
+
+-   **Halka_Arz_Tarihi**
+    -   **Description:** The date when the fund was first publicly offered (IPO date), indicating the fund's age.
+    -   **Keywords:** `halka arz tarihi`, `kuruluş tarihi`, `ne zaman kuruldu`, `ne zamandır var`, `ilk işlem tarihi`, `piyasaya çıkış tarihi`
+
+-   **Karsilastirma_Olcutu**
+    -   **Description:** The benchmark index or a mix of indices against which the fund's performance is measured. It serves as a reference point to evaluate the fund's success.
+    -   **Keywords:** `karşılaştırma ölçütü`, `benchmark`, `performans ölçütü`, `kıyaslama ölçütü`, `neye göre ölçülüyor`, `endeksi ne`
+
+-   **Special Case Rules:**
+    -   ...
+```

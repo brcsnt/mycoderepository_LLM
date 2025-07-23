@@ -1,8 +1,3 @@
-Of course. Here is the final, updated prompt written in English, while keeping the specific field names and example queries in Turkish as requested.
-
-This version incorporates our discussion about the purpose of the rules in section 3.1, framing them as a guide for ambiguity resolution.
-
------
 
 ### **FINAL REVISED AGENT PROMPT (v4)**
 

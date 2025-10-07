@@ -1,0 +1,18 @@
+Merhabalar, ben x'den x. Birim olarak yürüttüğümüz iki yapay zekâ projesini paylaşacağım.
+
+Amacımız, kurum genelinde veriyi anlamlandırarak hem çalışanlarımızın hem de müşterilerimizin deneyimini yapay zekâyla güçlendirmek.
+
+x, kurum içinde bilgiye hızlı ve kolay erişim sağlayan tüm chatbot'larımızın genel adı. 
+Bu yapıyı bir adım ileri taşıyarak, üretken yapay zekâ teknolojisiyle x Plus'ı geliştirdik. 
+Her yıl bankamızın binlerce kampanyası hayata geçiyor ve bu kampanyalarla ilgili ekiplerimiz her gün binlerce soru soruyor. 
+x Plus, kampanyalarla ilgili bu yoğun süreci tek bir platformda merkezileştirerek bilgilere hızlı, doğru ve tek noktadan erişim sağlanmasına imkân sağladı. 
+Bu projeyi asıl inovatif kılan ise, klasik chatbot'ların ötesine geçerek kullanıcının niyetini anlayan, anlamsal arama ve sohbet hafızası ile en doğru bilgiyi anında sunabilen akıllı bir yapıya sahip olması. 
+Kısacası, x Plus sayesinde bilgiye erişim artık daha akıllı, daha hızlı ve daha verimli.
+
+İkinci projemizde ise müşterilerimizin farklı kanallarda bıraktığı izleri, yani unstructured verileri analiz ederek anlamlı iç görülere dönüştürmeye hedefliyoruz. 
+Bu kapsamda, çağrı merkezi görüşmeleri, x yazışmaları ve yüksek segmentli müşterilerle yapılan "My Conversations" mesajları gibi kanalları ele alıyoruz. 
+Projenin inovatif yönü, işte bu farklı kaynaklardaki dağınık verileri tek bir analitik yapıda birleştirmesi ve 
+yapay zekâ destekli metin analiziyle müşterilerimizin bize ulaşma sebeplerini ve ihtiyaçlarının karşılanıp karşılanmadığını otomatik olarak tespit edecek olmasıdır. 
+Bu sayede, ürün, talep kategorisi ve alt kategori bazında derinlemesine bilgi çıkarabileceğiz. 
+Nihayetinde ise, müşteri memnuniyetini yakından izleyip elde ettiğimiz verileri "churn", "propensity" ve "sensitivity" gibi analitik modellerimize entegre ederek 
+müşteri deneyimini çok daha proaktif bir hâle getirmeyi hedefliyoruz.

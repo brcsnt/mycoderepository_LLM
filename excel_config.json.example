@@ -1,0 +1,43 @@
+{
+  "description": "Excel sütun adlarının mapping'i - Bu dosyayı excel_config.json olarak kopyalayıp özelleştirebilirsiniz",
+  "excel_columns": {
+    "kategori_adi": "kategori_adi",
+    "alan_adi": "alan_adi",
+    "soru": "soru",
+    "alan_tipi": "alan_tipi",
+    "gerekli_mi": "gerekli_mi",
+    "aciklama": "aciklama"
+  },
+  "examples": {
+    "turkish_defaults": {
+      "kategori_adi": "kategori_adi",
+      "alan_adi": "alan_adi",
+      "soru": "soru",
+      "alan_tipi": "alan_tipi",
+      "gerekli_mi": "gerekli_mi",
+      "aciklama": "aciklama"
+    },
+    "english_columns": {
+      "kategori_adi": "Category",
+      "alan_adi": "Field_Name",
+      "soru": "Question",
+      "alan_tipi": "Type",
+      "gerekli_mi": "Required",
+      "aciklama": "Description"
+    },
+    "custom_example": {
+      "kategori_adi": "ComplaintCategory",
+      "alan_adi": "FieldID",
+      "soru": "QuestionText",
+      "alan_tipi": "DataType",
+      "gerekli_mi": "IsMandatory",
+      "aciklama": "Notes"
+    }
+  },
+  "instructions": [
+    "1. Bu dosyayı 'excel_config.json' olarak kopyalayın",
+    "2. 'excel_columns' altındaki değerleri kendi Excel sütun adlarınızla değiştirin",
+    "3. Uygulamayı yeniden başlatın",
+    "4. Sistem otomatik olarak yeni sütun adlarını kullanacak"
+  ]
+}

@@ -1,34 +1,42 @@
-# 💬 Şikayet Yönetim Sistemi
+# 💬 Şikayet Yönetim Sistemi - LLM Tabanlı Stateful Dialog Chatbot
 
-LLM tabanlı akıllı şikayet yönetim ve kategorizasyon sistemi.
+Modern LLM (Büyük Dil Modeli) yeteneklerini klasik "Slot Filling" (Alan Doldurma) göreviyle birleştiren, duruma dayalı (stateful) bir diyalog sistemi.
 
 ## 🎯 Özellikler
 
-- ✅ Otomatik şikayet kategorizasyonu
-- ✅ Akıllı alan çıkarma (NLP ile)
-- ✅ Dinamik soru-cevap akışı
-- ✅ Excel tabanlı kategori yönetimi
-- ✅ JSON formatında çıktı
-- ✅ Streamlit ile kullanıcı dostu arayüz
-- ✅ Modüler ve genişletilebilir mimari
+- ✅ **Otomatik Kategorizasyon**: LLM ile şikayet metni otomatik kategorize edilir
+- ✅ **Akıllı Alan Çıkarımı**: İlk metinden çıkarılabilecek tüm bilgiler otomatik tespit edilir
+- ✅ **Dinamik Soru Yönetimi**: Sadece eksik alanlar için soru sorulur
+- ✅ **Stateful Dialog**: Konuşma durumu `st.session_state` ile korunur
+- ✅ **Excel Tabanlı Konfig**: Kategoriler, alanlar ve sorular Excel'den yönetilir
+- ✅ **Parametrik Sütun Mapping**: Excel sütun adları tamamen özelleştirilebilir
+- ✅ **Modüler Mimari**: Her bileşen ayrı modülde ve bağımsız çalışabilir
+- ✅ **Streamlit UI**: Kullanıcı dostu modern arayüz
+- ✅ **JSON Export**: Toplanan veriler JSON formatında indirilebilir
 
 ## 📁 Proje Yapısı
 
 ```
-complaint-chatbot/
-├── app.py                    # Streamlit arayüzü
+mycoderepository_LLM/
+├── app.py                    # Streamlit ana uygulama
 ├── pipeline.py               # Ana işlem pipeline'ı
-├── config.py                 # Konfigürasyon dosyası
-├── models.py                 # Veri modelleri
-├── excel_manager.py          # Excel okuma/yazma
-├── llm_service.py           # LLM API servisi
-├── categorization.py         # Kategorizasyon servisi
-├── field_extraction.py       # Alan çıkarma servisi
-├── question_handler.py       # Soru yönetimi
+├── models.py                 # Veri modelleri (dataclass)
+├── config.py                 # Uygulama konfigürasyonu
+├── config_loader.py          # ⭐ Excel sütun mapping loader (PARAMETRIK!)
+│
+├── llm_service.py            # LLM API servisi
+├── excel_manager.py          # Excel okuma/yazma (parametrik sütun desteği)
+├── categorization.py         # Kategorizasyon modülü
+├── field_extraction.py       # Alan çıkarma modülü
+├── question_handler.py       # Soru yönetimi modülü
+│
+├── categories.xlsx           # Kategori/alan veritabanı
+├── excel_config.json         # ⭐ Excel sütun mapping (opsiyonel)
+│
+├── .env                      # Environment variables (GİT'E EKLEMEYİN!)
+├── .env.example              # Environment template
 ├── requirements.txt          # Python bağımlılıkları
-├── .env.example             # Örnek environment dosyası
-├── categories.xlsx          # Kategori tanımları (otomatik oluşur)
-└── README.md                # Bu dosya
+└── README.md                 # Bu dosya
 ```
 
 ## 🚀 Kurulum
@@ -107,58 +115,110 @@ final_json = pipeline.get_final_json(state)
 print(final_json)
 ```
 
-## 📊 Excel Formatı
+## 📊 Excel Parametrik Yapı ⭐
 
-### Gerekli Sütunlar
+Bu sistem, Excel sütun adlarını **tamamen parametrik** hale getirir. Kendi Excel formatınızı kullanabilirsiniz!
 
-1. **kategori_adi**: Kategori adı (örn: ATM, Kart, Hesap)
-2. **alan_adi**: Çıkarılacak alan adı (örn: atm_lokasyonu)
-3. **soru**: Kullanıcıya sorulacak soru
-4. **alan_tipi**: Alan tipi (string, number, date, vb.)
-5. **gerekli_mi**: Bu alan zorunlu mu? (TRUE/FALSE)
-6. **aciklama**: Kategori açıklaması (opsiyonel)
-
-### Örnek Satırlar
-
+### Varsayılan Sütun Adları
 ```
-ATM, atm_lokasyonu, Problem yaşadığınız ATM lokasyonu nedir?, string, TRUE, ATM ile ilgili şikayetler
-ATM, atm_problemi, ATM de sorun yaşadığınız durum nedir?, string, TRUE, 
-ATM, atm_para_miktari, ATM de ne kadar paranız sıkıştı?, string, TRUE,
+kategori_adi | alan_adi | soru | alan_tipi | gerekli_mi | aciklama
 ```
+
+### ⚙️ Özelleştirme Yöntemleri
+
+#### **Yöntem 1: JSON Config Dosyası** (Önerilen)
+
+1. Proje kök dizininde `excel_config.json` dosyası oluşturun:
+```json
+{
+  "excel_columns": {
+    "kategori_adi": "Category",
+    "alan_adi": "Field_Name",
+    "soru": "Question",
+    "alan_tipi": "Type",
+    "gerekli_mi": "Required",
+    "aciklama": "Description"
+  }
+}
+```
+
+2. Excel dosyanızı bu sütun adlarıyla oluşturun
+
+#### **Yöntem 2: Environment Variables**
+
+`.env` dosyasına ekleyin:
+```env
+EXCEL_COL_CATEGORY=Category
+EXCEL_COL_FIELD=Field_Name
+EXCEL_COL_QUESTION=Question
+EXCEL_COL_TYPE=Type
+EXCEL_COL_REQUIRED=Required
+EXCEL_COL_DESCRIPTION=Description
+```
+
+#### **Yöntem 3: Kod İçinde** (İleri Seviye)
+
+`config_loader.py` dosyasındaki `ExcelColumnMapping` class'ını düzenleyin.
+
+### 📋 Excel Şablon Örneği
+
+| kategori_adi | alan_adi | soru | alan_tipi | gerekli_mi | aciklama |
+|--------------|----------|------|-----------|------------|----------|
+| ATM | atm_lokasyonu | Problem yaşadığınız ATM lokasyonu nedir? | string | TRUE | ATM ile ilgili şikayetler |
+| ATM | atm_problemi | ATM'de sorun yaşadığınız durum nedir? | string | TRUE | |
+| ATM | atm_para_miktari | ATM'de ne kadar paranız sıkıştı? | string | TRUE | |
+| Kart | kart_turu | Hangi kart türünü kullanıyorsunuz? | string | TRUE | Kart ile ilgili şikayetler |
+| Kart | kart_problemi | Kartınızla ilgili ne gibi bir sorun yaşıyorsunuz? | string | TRUE | |
 
 ## 🔧 Modüller
 
 ### 1. config.py
 Tüm konfigürasyon ayarları (API keys, model seçimi, vb.)
 
-### 2. models.py
+### 2. config_loader.py ⭐ YENİ!
+Excel sütun mapping'lerini yönetir:
+- `ExcelColumnMapping`: Sütun adları dataclass
+- `ConfigLoader`: JSON/env'den config okur
+- **3 farklı özelleştirme yöntemi** destekler
+
+### 3. models.py
 Veri yapıları ve modeller:
 - `CategoryField`: Kategori alanı
 - `Category`: Kategori modeli
 - `ExtractedData`: Çıkarılan veri
-- `ConversationState`: Sohbet durumu
+- `ConversationState`: Sohbet durumu (stateful!)
 - `ChatMessage`: Chat mesajı
 
-### 3. excel_manager.py
-Excel dosyasından kategori bilgilerini okur ve yönetir.
+### 4. excel_manager.py (Geliştirildi ⭐)
+- Excel dosyasından kategori bilgilerini okur
+- **Parametrik sütun adları** desteği
+- Otomatik örnek dosya oluşturma
 
-### 4. llm_service.py
-LLM API çağrılarını yönetir. Prompt'ları gönderir ve yanıtları parse eder.
+### 5. llm_service.py
+LLM API çağrılarını yönetir:
+- OpenAI API formatı
+- JSON response parsing
+- Prompt yönetimi
 
-### 5. categorization.py
-Şikayet metnini kategorize eder.
+### 6. categorization.py
+Şikayet metnini kategorize eder (LLM kullanarak)
 
-### 6. field_extraction.py
-Şikayet metninden alan bilgilerini çıkarır ve eksik alanları belirler.
+### 7. field_extraction.py
+İki ana görev:
+- İlk metinden tüm alanları çıkarma
+- Kullanıcı cevaplarından spesifik değerleri çıkarma
 
-### 7. question_handler.py
-Kullanıcıya soru sorma ve cevap işleme mantığı.
+### 8. question_handler.py
+Soru-cevap döngüsü mantığı:
+- Sıralı soru sorma
+- Cevap kaydetme
+- Tamamlanma kontrolü
 
-### 8. pipeline.py
-Tüm servisleri birleştiren ana pipeline.
+### 9. pipeline.py
+Tüm servisleri orkestre eden ana pipeline
 
-### 9. app.py
-Streamlit arayüzü.
+### 10. app.py
+Streamlit arayüzü (`st.session_state` ile stateful)
 
 ## 🎯 Akış Diyagramı
 

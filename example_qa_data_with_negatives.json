@@ -1,0 +1,182 @@
+[
+  {
+    "question": "Türkiye'nin başkenti neresidir?",
+    "positive": "Türkiye'nin başkenti Ankara'dır. 1923 yılında başkent ilan edilmiştir.",
+    "negatives": [
+      "Python yüksek seviyeli bir programlama dilidir.",
+      "Yapay zeka, makinelerin insan zekasını taklit etmesini sağlar.",
+      "Derin öğrenme, yapay sinir ağlarını kullanır."
+    ]
+  },
+  {
+    "question": "Yapay zeka nedir?",
+    "positive": "Yapay zeka, makinelerin insan zekasını taklit etmesini sağlayan teknolojilerin genel adıdır. Öğrenme, problem çözme ve karar verme gibi yetenekleri içerir.",
+    "negatives": [
+      "Türkiye'nin başkenti Ankara'dır.",
+      "Transfer learning, bir görevde öğrenilen bilgilerin başka bir görevde kullanılmasıdır.",
+      "Tokenizasyon, metinlerin küçük parçalara bölünmesi işlemidir."
+    ]
+  },
+  {
+    "question": "Python programlama dilinin avantajları nelerdir?",
+    "positive": "Python'un avantajları arasında kolay okunabilir sözdizimi, geniş kütüphane desteği, çoklu platform desteği ve büyük topluluk desteği bulunur.",
+    "negatives": [
+      "BERT, Google tarafından geliştirilen bir dil modelidir.",
+      "Cosine similarity, iki vektör arasındaki açıyı ölçer.",
+      "Overfitting, modelin eğitim verilerine aşırı uyum sağlamasıdır."
+    ]
+  },
+  {
+    "question": "Makine öğrenmesi nasıl çalışır?",
+    "positive": "Makine öğrenmesi, algoritmalar kullanarak verilerden öğrenen ve tahminler yapan bir yapay zeka dalıdır. Verilerden pattern'ler çıkarır ve yeni verilere genelleme yapar.",
+    "negatives": [
+      "Embedding, kelimelerin vektör temsillerine dönüştürülmesidir.",
+      "Learning rate, model parametrelerinin güncelleme hızını belirler.",
+      "Dropout, overfitting'i önlemek için kullanılan bir tekniktir."
+    ]
+  },
+  {
+    "question": "Derin öğrenme nedir?",
+    "positive": "Derin öğrenme, yapay sinir ağlarını kullanarak makine öğrenmesi yapan bir tekniktir. Birden fazla katmanlı ağlar kullanarak karmaşık pattern'leri öğrenebilir.",
+    "negatives": [
+      "Attention mekanizması, modelin girdinin farklı kısımlarına odaklanmasını sağlar.",
+      "Batch normalization, sinir ağı eğitimini stabilize eder.",
+      "Cross-validation, model performansını değerlendirme tekniğidir."
+    ]
+  },
+  {
+    "question": "NLP ne demektir?",
+    "positive": "NLP (Natural Language Processing - Doğal Dil İşleme), bilgisayarların insan dilini anlaması ve işlemesi için kullanılan yapay zeka alanıdır.",
+    "negatives": [
+      "Adam optimizer, adaptif öğrenme oranı kullanır.",
+      "Fine-tuning, önceden eğitilmiş modelin yeniden eğitilmesidir.",
+      "Transformer mimarisi, attention mekanizması kullanır."
+    ]
+  },
+  {
+    "question": "BERT modeli nedir?",
+    "positive": "BERT (Bidirectional Encoder Representations from Transformers), Google tarafından geliştirilen bir dil modelidir. Çift yönlü context kullanarak metinleri anlar.",
+    "negatives": [
+      "Python'un geniş kütüphane desteği vardır.",
+      "NLP, doğal dil işleme alanıdır.",
+      "Makine öğrenmesi verilerden öğrenir."
+    ]
+  },
+  {
+    "question": "Embedding nedir?",
+    "positive": "Embedding, kelimelerin veya cümlelerin sayısal vektör temsillerine dönüştürülmesidir. Semantik benzerlikleri koruyarak matematiksel işlemlere olanak sağlar.",
+    "negatives": [
+      "Türkiye'nin başkenti 1923'te ilan edildi.",
+      "Derin öğrenme birden fazla katman kullanır.",
+      "BERT çift yönlü bir modeldir."
+    ]
+  },
+  {
+    "question": "Fine-tuning nedir?",
+    "positive": "Fine-tuning, önceden eğitilmiş bir modelin belirli bir görev için yeniden eğitilmesidir. Transfer learning'in bir türüdür ve daha az veri ile iyi sonuçlar alınmasını sağlar.",
+    "negatives": [
+      "Yapay zeka problem çözme yeteneği içerir.",
+      "Python kolay okunabilir sözdizimi sunar.",
+      "Embedding vektör temsilleri oluşturur."
+    ]
+  },
+  {
+    "question": "Transformer mimarisi nedir?",
+    "positive": "Transformer, attention mekanizması kullanan bir derin öğrenme mimarisidir. BERT, GPT gibi modern dil modelleri bu mimariye dayanır.",
+    "negatives": [
+      "NLP insan dilini işler.",
+      "Makine öğrenmesi tahminler yapar.",
+      "Embedding semantik benzerlik korur."
+    ]
+  },
+  {
+    "question": "Attention mekanizması nedir?",
+    "positive": "Attention mekanizması, modelin girdinin farklı kısımlarına farklı ağırlıklar vermesini sağlar. Böylece önemli bilgilere odaklanabilir.",
+    "negatives": [
+      "Fine-tuning daha az veri gerektirir.",
+      "BERT Google tarafından geliştirildi.",
+      "Python geniş topluluk desteğine sahiptir."
+    ]
+  },
+  {
+    "question": "Transfer learning nedir?",
+    "positive": "Transfer learning, bir görevde öğrenilen bilgilerin başka bir görevde kullanılmasıdır. Önceden eğitilmiş modeller yeni görevler için adapte edilir.",
+    "negatives": [
+      "Transformer attention mekanizması kullanır.",
+      "Derin öğrenme karmaşık pattern'ler öğrenir.",
+      "NLP bilgisayarların dil anlamasını sağlar."
+    ]
+  },
+  {
+    "question": "Cosine similarity nedir?",
+    "positive": "Cosine similarity, iki vektör arasındaki açıyı ölçerek benzerlik hesaplayan bir metriktir. Embedding'lerde sıkça kullanılır.",
+    "negatives": [
+      "Transfer learning bilgi transferi sağlar.",
+      "Attention önemli bilgilere odaklanır.",
+      "Fine-tuning modelleri adapte eder."
+    ]
+  },
+  {
+    "question": "Tokenizasyon nedir?",
+    "positive": "Tokenizasyon, metinlerin küçük parçalara (token'lara) bölünmesi işlemidir. Kelime, alt-kelime veya karakter seviyesinde yapılabilir.",
+    "negatives": [
+      "Cosine similarity açı ölçer.",
+      "Embedding vektörler oluşturur.",
+      "BERT transformers kullanır."
+    ]
+  },
+  {
+    "question": "Batch normalization nedir?",
+    "positive": "Batch normalization, sinir ağı eğitimini stabilize etmek için kullanılan bir tekniktir. Her batch'teki aktivasyonları normalize eder.",
+    "negatives": [
+      "Tokenizasyon metinleri böler.",
+      "Cosine similarity benzerlik hesaplar.",
+      "Transfer learning görevler arası bilgi paylaşır."
+    ]
+  },
+  {
+    "question": "Dropout nedir?",
+    "positive": "Dropout, overfitting'i önlemek için kullanılan bir regularization tekniğidir. Eğitim sırasında rastgele nöronları devre dışı bırakır.",
+    "negatives": [
+      "Batch normalization eğitimi stabilize eder.",
+      "Tokenizasyon token'lara böler.",
+      "Attention ağırlıklar verir."
+    ]
+  },
+  {
+    "question": "Adam optimizer nedir?",
+    "positive": "Adam, momentum ve RMSprop'u birleştiren adaptif bir öğrenme oranı optimizasyon algoritmasıdır. Derin öğrenmede yaygın kullanılır.",
+    "negatives": [
+      "Dropout nöronları devre dışı bırakır.",
+      "Batch normalization normalize eder.",
+      "Tokenizasyon parçalara böler."
+    ]
+  },
+  {
+    "question": "Learning rate nedir?",
+    "positive": "Learning rate, model parametrelerinin her güncelleme adımında ne kadar değişeceğini belirleyen hiperparametredir. Çok önemli bir eğitim parametresidir.",
+    "negatives": [
+      "Adam optimizer adaptif öğrenme kullanır.",
+      "Dropout regularization sağlar.",
+      "Batch normalization stabilize eder."
+    ]
+  },
+  {
+    "question": "Overfitting nedir?",
+    "positive": "Overfitting, modelin eğitim verilerine aşırı uyum sağlayıp yeni verilerde kötü performans göstermesidir. Genelleme yeteneğini kaybeder.",
+    "negatives": [
+      "Learning rate güncelleme hızını belirler.",
+      "Adam optimizer momentum kullanır.",
+      "Dropout eğitim sırasında aktif olur."
+    ]
+  },
+  {
+    "question": "Cross-validation nedir?",
+    "positive": "Cross-validation, model performansını değerlendirmek için veriyi farklı şekillerde bölerek test eden bir tekniktir. K-fold en yaygın yöntemidir.",
+    "negatives": [
+      "Overfitting genelleme yeteneğini azaltır.",
+      "Learning rate hiperparametre olarak önemlidir.",
+      "Adam yaygın kullanılan bir optimizer'dır."
+    ]
+  }
+]

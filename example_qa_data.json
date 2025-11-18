@@ -1,0 +1,82 @@
+[
+  {
+    "question": "Türkiye'nin başkenti neresidir?",
+    "answer": "Türkiye'nin başkenti Ankara'dır. 1923 yılında başkent ilan edilmiştir."
+  },
+  {
+    "question": "Yapay zeka nedir?",
+    "answer": "Yapay zeka, makinelerin insan zekasını taklit etmesini sağlayan teknolojilerin genel adıdır. Öğrenme, problem çözme ve karar verme gibi yetenekleri içerir."
+  },
+  {
+    "question": "Python programlama dilinin avantajları nelerdir?",
+    "answer": "Python'un avantajları arasında kolay okunabilir sözdizimi, geniş kütüphane desteği, çoklu platform desteği ve büyük topluluk desteği bulunur."
+  },
+  {
+    "question": "Makine öğrenmesi nasıl çalışır?",
+    "answer": "Makine öğrenmesi, algoritmalar kullanarak verilerden öğrenen ve tahminler yapan bir yapay zeka dalıdır. Verilerden pattern'ler çıkarır ve yeni verilere genelleme yapar."
+  },
+  {
+    "question": "Derin öğrenme nedir?",
+    "answer": "Derin öğrenme, yapay sinir ağlarını kullanarak makine öğrenmesi yapan bir tekniktir. Birden fazla katmanlı ağlar kullanarak karmaşık pattern'leri öğrenebilir."
+  },
+  {
+    "question": "NLP ne demektir?",
+    "answer": "NLP (Natural Language Processing - Doğal Dil İşleme), bilgisayarların insan dilini anlaması ve işlemesi için kullanılan yapay zeka alanıdır."
+  },
+  {
+    "question": "BERT modeli nedir?",
+    "answer": "BERT (Bidirectional Encoder Representations from Transformers), Google tarafından geliştirilen bir dil modelidir. Çift yönlü context kullanarak metinleri anlar."
+  },
+  {
+    "question": "Embedding nedir?",
+    "answer": "Embedding, kelimelerin veya cümlelerin sayısal vektör temsillerine dönüştürülmesidir. Semantik benzerlikleri koruyarak matematiksel işlemlere olanak sağlar."
+  },
+  {
+    "question": "Fine-tuning nedir?",
+    "answer": "Fine-tuning, önceden eğitilmiş bir modelin belirli bir görev için yeniden eğitilmesidir. Transfer learning'in bir türüdür ve daha az veri ile iyi sonuçlar alınmasını sağlar."
+  },
+  {
+    "question": "Transformer mimarisi nedir?",
+    "answer": "Transformer, attention mekanizması kullanan bir derin öğrenme mimarisidir. BERT, GPT gibi modern dil modelleri bu mimariye dayanır."
+  },
+  {
+    "question": "Attention mekanizması nedir?",
+    "answer": "Attention mekanizması, modelin girdinin farklı kısımlarına farklı ağırlıklar vermesini sağlar. Böylece önemli bilgilere odaklanabilir."
+  },
+  {
+    "question": "Transfer learning nedir?",
+    "answer": "Transfer learning, bir görevde öğrenilen bilgilerin başka bir görevde kullanılmasıdır. Önceden eğitilmiş modeller yeni görevler için adapte edilir."
+  },
+  {
+    "question": "Cosine similarity nedir?",
+    "answer": "Cosine similarity, iki vektör arasındaki açıyı ölçerek benzerlik hesaplayan bir metriktir. Embedding'lerde sıkça kullanılır."
+  },
+  {
+    "question": "Tokenizasyon nedir?",
+    "answer": "Tokenizasyon, metinlerin küçük parçalara (token'lara) bölünmesi işlemidir. Kelime, alt-kelime veya karakter seviyesinde yapılabilir."
+  },
+  {
+    "question": "Batch normalization nedir?",
+    "answer": "Batch normalization, sinir ağı eğitimini stabilize etmek için kullanılan bir tekniktir. Her batch'teki aktivasyonları normalize eder."
+  },
+  {
+    "question": "Dropout nedir?",
+    "answer": "Dropout, overfitting'i önlemek için kullanılan bir regularization tekniğidir. Eğitim sırasında rastgele nöronları devre dışı bırakır."
+  },
+  {
+    "question": "Adam optimizer nedir?",
+    "answer": "Adam, momentum ve RMSprop'u birleştiren adaptif bir öğrenme oranı optimizasyon algoritmasıdır. Derin öğrenmede yaygın kullanılır."
+  },
+  {
+    "question": "Learning rate nedir?",
+    "answer": "Learning rate, model parametrelerinin her güncelleme adımında ne kadar değişeceğini belirleyen hiperparametredir. Çok önemli bir eğitim parametresidir."
+  },
+  {
+    "question": "Overfitting nedir?",
+    "answer": "Overfitting, modelin eğitim verilerine aşırı uyum sağlayıp yeni verilerde kötü performans göstermesidir. Genelleme yeteneğini kaybeder."
+  },
+  {
+    "question": "Cross-validation nedir?",
+    "answer": "Cross-validation, model performansını değerlendirmek için veriyi farklı şekillerde bölerek test eden bir tekniktir. K-fold en yaygın yöntemidir."
+  }
+]
